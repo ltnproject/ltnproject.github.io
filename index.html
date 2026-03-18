@@ -4,268 +4,145 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>drk.link — URL Shortener</title>
+  <meta name="description" content="Fast, minimal URL shortener. Create short links instantly." />
+  <meta property="og:title" content="drk.link — URL Shortener" />
+  <meta property="og:description" content="Fast, minimal URL shortener. Create short links instantly." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="robots" content="index, follow" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='78' x='8' font-size='72' font-family='monospace' fill='%23e8ff47'>d</text></svg>" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9926451246356367" crossorigin="anonymous"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #0a0a0a;
-      --surface: #111111;
-      --border: #222222;
-      --accent: #e8ff47;
-      --accent-dim: #b8cc2a;
-      --text: #f0f0f0;
-      --muted: #555;
-      --error: #ff4d4d;
-      --success: #47ffb2;
+      --bg: #0a0a0a; --surface: #111111; --border: #222222;
+      --accent: #e8ff47; --accent-dim: #b8cc2a;
+      --text: #f0f0f0; --muted: #555;
+      --error: #ff4d4d; --success: #47ffb2; --warn: #ffb347;
     }
-
     body {
-      background: var(--bg);
-      color: var(--text);
+      background: var(--bg); color: var(--text);
       font-family: 'Space Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1rem;
-      overflow-x: hidden;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 0 1rem 3rem; overflow-x: hidden;
     }
-
-    /* Background grid */
     body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(var(--border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--border) 1px, transparent 1px);
-      background-size: 40px 40px;
-      opacity: 0.4;
-      pointer-events: none;
-      z-index: 0;
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px; opacity: 0.4; pointer-events: none; z-index: 0;
     }
 
-    .container {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 560px;
+    /* NAV */
+    .navbar {
+      position: relative; z-index: 10; width: 100%; max-width: 560px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.5rem 0; margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
     }
+    .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; letter-spacing: -1px; }
+    .nav-logo span { color: var(--accent); }
+    .nav-right { display: flex; align-items: center; gap: 0.75rem; }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; display: none; }
+    .user-name { font-size: 0.7rem; color: var(--muted); display: none; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sign-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      font-family: 'Space Mono', monospace; font-size: 0.65rem; padding: 0.4rem 0.8rem;
+      cursor: pointer; letter-spacing: 0.05em; text-transform: uppercase;
+      transition: all 0.15s; margin-top: 0; width: auto; display: flex; align-items: center; gap: 0.4rem;
+    }
+    .sign-btn:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+    .g-icon { width: 13px; height: 13px; flex-shrink: 0; }
 
-    /* Header */
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: clamp(2.5rem, 8vw, 4rem);
-      letter-spacing: -2px;
-      line-height: 1;
-      margin-bottom: 0.25rem;
-    }
+    /* MAIN */
+    .container { position: relative; z-index: 1; width: 100%; max-width: 560px; }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(2.5rem, 8vw, 4rem); letter-spacing: -2px; line-height: 1; margin-bottom: 0.25rem; }
     .logo span { color: var(--accent); }
+    .tagline { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 3rem; }
 
-    .tagline {
-      color: var(--muted);
-      font-size: 0.75rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-bottom: 3rem;
-    }
-
-    /* Card */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 2rem;
-      position: relative;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: -1px; left: 2rem;
-      width: 3rem; height: 2px;
-      background: var(--accent);
-    }
-
-    /* Input row */
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-
-    label {
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
+    /* CARD */
+    .card { background: var(--surface); border: 1px solid var(--border); padding: 2rem; position: relative; }
+    .card::before { content: ''; position: absolute; top: -1px; left: 2rem; width: 3rem; height: 2px; background: var(--accent); }
+    .input-group { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+    label { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
     input {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'Space Mono', monospace;
-      font-size: 0.85rem;
-      padding: 0.85rem 1rem;
-      width: 100%;
-      outline: none;
-      transition: border-color 0.2s;
+      background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      font-family: 'Space Mono', monospace; font-size: 0.85rem; padding: 0.85rem 1rem;
+      width: 100%; outline: none; transition: border-color 0.2s;
     }
     input::placeholder { color: var(--muted); }
     input:focus { border-color: var(--accent); }
-
-    /* Slug row */
-    .slug-row {
-      display: flex;
-      align-items: stretch;
-      gap: 0;
-      border: 1px solid var(--border);
-      transition: border-color 0.2s;
-    }
+    .slug-row { display: flex; align-items: stretch; border: 1px solid var(--border); transition: border-color 0.2s; }
     .slug-row:focus-within { border-color: var(--accent); }
-
-    .slug-prefix {
-      background: #1a1a1a;
-      color: var(--muted);
-      font-family: 'Space Mono', monospace;
-      font-size: 0.75rem;
-      padding: 0.85rem 0.75rem;
-      white-space: nowrap;
-      border-right: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-    }
-
-    .slug-row input {
-      border: none;
-      flex: 1;
-    }
+    .slug-prefix { background: #1a1a1a; color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.7rem; padding: 0.85rem 0.75rem; white-space: nowrap; border-right: 1px solid var(--border); display: flex; align-items: center; }
+    .slug-row input { border: none; flex: 1; }
     .slug-row input:focus { border-color: transparent; }
-
-    /* Button */
-    button {
-      width: 100%;
-      background: var(--accent);
-      color: #000;
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 0.9rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 1rem;
-      border: none;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-      margin-top: 1.25rem;
-    }
+    .row-two { display: flex; gap: 0.75rem; }
+    .row-two .input-group { flex: 1; }
+    select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.8rem; padding: 0.85rem 0.75rem; width: 100%; outline: none; transition: border-color 0.2s; cursor: pointer; appearance: none; }
+    select:focus { border-color: var(--accent); }
+    button { width: 100%; background: var(--accent); color: #000; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 1rem; border: none; cursor: pointer; transition: background 0.15s, transform 0.1s; margin-top: 1.25rem; }
     button:hover { background: var(--accent-dim); }
     button:active { transform: scale(0.99); }
     button:disabled { background: var(--muted); cursor: not-allowed; color: #888; }
 
-    /* Result */
-    .result {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      display: none;
-      animation: fadeIn 0.3s ease;
-    }
+    /* RESULT */
+    .result { margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--border); background: var(--bg); display: none; animation: fadeIn 0.3s ease; }
     .result.show { display: block; }
     .result.error { border-color: var(--error); }
     .result.success { border-color: var(--success); }
-
-    .result-label {
-      font-size: 0.6rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-bottom: 0.5rem;
-    }
+    .result-label { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; }
     .result.error .result-label { color: var(--error); }
     .result.success .result-label { color: var(--success); }
-
-    .result-link {
-      font-size: 0.9rem;
-      word-break: break-all;
-      color: var(--text);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .copy-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-family: 'Space Mono', monospace;
-      font-size: 0.65rem;
-      padding: 0.3rem 0.6rem;
-      cursor: pointer;
-      white-space: nowrap;
-      margin-top: 0;
-      width: auto;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      transition: all 0.15s;
-    }
+    .result-link { font-size: 0.85rem; word-break: break-all; color: var(--text); display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .result-meta { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; gap: 1rem; flex-wrap: wrap; }
+    .meta-item { font-size: 0.65rem; color: var(--muted); }
+    .meta-item span { color: var(--text); }
+    .copy-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.65rem; padding: 0.3rem 0.6rem; cursor: pointer; white-space: nowrap; margin-top: 0; width: auto; letter-spacing: 0.05em; text-transform: uppercase; transition: all 0.15s; }
     .copy-btn:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
 
-    /* Footer */
-    .footer {
-      margin-top: 2rem;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
-    }
+    /* LOGIN PROMPT */
+    .login-prompt { margin-top: 1.25rem; padding: 1.25rem; border: 1px dashed var(--border); text-align: center; display: none; }
+    .login-prompt p { font-size: 0.7rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.7; }
+    .google-btn { display: inline-flex; align-items: center; gap: 0.6rem; background: #fff; color: #333; font-family: 'Space Mono', monospace; font-size: 0.75rem; padding: 0.65rem 1.25rem; border: none; cursor: pointer; width: auto; margin-top: 0; font-weight: 700; transition: background 0.15s; }
+    .google-btn:hover { background: #eee; }
+    .google-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-    /* Loading */
-    .spinner {
-      display: inline-block;
-      width: 12px; height: 12px;
-      border: 2px solid #000;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
+    /* DASHBOARD */
+    .dashboard { margin-top: 2rem; }
+    .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .dash-title { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .dash-count { font-size: 0.65rem; color: var(--muted); }
+    .link-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .link-item { background: var(--surface); border: 1px solid var(--border); padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.75rem; animation: fadeIn 0.25s ease; }
+    .link-item-info { flex: 1; min-width: 0; }
+    .link-item-short { font-size: 0.8rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .link-item-dest { font-size: 0.65rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem; }
+    .link-item-meta { font-size: 0.6rem; color: var(--muted); margin-top: 0.25rem; }
+    .link-item-meta span { color: var(--text); }
+    .link-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+    .action-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.6rem; padding: 0.25rem 0.5rem; cursor: pointer; width: auto; margin-top: 0; transition: all 0.15s; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+    .action-btn.del:hover { border-color: var(--error); color: var(--error); }
+    .dash-empty { font-size: 0.75rem; color: var(--muted); text-align: center; padding: 2rem 0; }
 
-    /* Redirect overlay */
-    .redirect-screen {
-      text-align: center;
-    }
+    /* MISC */
+    .footer { margin-top: 2rem; text-align: center; color: var(--muted); font-size: 0.65rem; letter-spacing: 0.1em; }
+    .rate-notice { font-size: 0.65rem; color: var(--muted); margin-top: 0.75rem; text-align: center; }
+    .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid #000; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
+    .spinner-muted { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--muted); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; }
+
+    /* REDIRECT */
+    .redirect-screen { text-align: center; padding-top: 30vh; }
     .redirect-screen .logo { margin-bottom: 2rem; }
-    .redirect-message {
-      color: var(--muted);
-      font-size: 0.8rem;
-      margin-bottom: 1rem;
-      letter-spacing: 0.05em;
-    }
-    .redirect-url {
-      color: var(--accent);
-      font-size: 0.75rem;
-      word-break: break-all;
-      margin-bottom: 2rem;
-    }
-    .progress-bar {
-      width: 100%;
-      height: 2px;
-      background: var(--border);
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      background: var(--accent);
-      animation: progress 1.5s linear forwards;
-    }
+    .redirect-message { color: var(--muted); font-size: 0.8rem; margin-bottom: 1rem; letter-spacing: 0.05em; }
+    .redirect-url { color: var(--accent); font-size: 0.75rem; word-break: break-all; margin-bottom: 2rem; margin-top: 0.75rem; }
+    .progress-bar { width: 100%; height: 2px; background: var(--border); overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); animation: progress 1.5s linear forwards; }
+    .skip-btn { margin-top: 1.5rem; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.7rem; padding: 0.5rem 1rem; cursor: pointer; letter-spacing: 0.05em; width: auto; }
+    .skip-btn:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
 
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -274,182 +151,367 @@
 </head>
 <body>
 
-<!-- Firebase SDK -->
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAKSjJqA-EaJ3cd2ay35luqlM9ABhhf5So",
-    authDomain: "drkexternal.firebaseapp.com",
-    projectId: "drkexternal",
-    storageBucket: "drkexternal.firebasestorage.app",
-    messagingSenderId: "489484482755",
-    appId: "1:489484482755:web:1a9c297d2fd87c20cf4a76",
-    measurementId: "G-0W5HFRHRFQ",
-    databaseURL: "https://drkexternal-default-rtdb.asia-southeast1.firebasedatabase.app"
-  };
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAKSjJqA-EaJ3cd2ay35luqlM9ABhhf5So",
+  authDomain: "drkexternal.firebaseapp.com",
+  projectId: "drkexternal",
+  storageBucket: "drkexternal.firebasestorage.app",
+  messagingSenderId: "489484482755",
+  appId: "1:489484482755:web:1a9c297d2fd87c20cf4a76",
+  measurementId: "G-0W5HFRHRFQ",
+  databaseURL: "https://drkexternal-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+let currentUser = null;
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+// ══════════════════════════════════════════════
+//  ROUTING
+// ══════════════════════════════════════════════
+const _params   = new URLSearchParams(window.location.search);
+const _slugParam = _params.get('r') || '';
+const _pathSlug  = window.location.pathname.replace(/^\//, '').split('/')[0];
+const activeSlug = _slugParam || (_pathSlug && _pathSlug !== 'index.html' ? _pathSlug : '');
 
-  // Detect slug from path (handles GitHub Pages 404 redirect trick)
-  const params = new URLSearchParams(window.location.search);
-  const redirectSlug = params.get('r') || '';
-  const pathSlug = window.location.pathname.replace(/^\//, '').split('/')[0];
-  const slug = redirectSlug || (pathSlug && pathSlug !== 'index.html' ? pathSlug : '');
+window.addEventListener('DOMContentLoaded', () => {
+  if (activeSlug) { showRedirectScreen(activeSlug); return; }
+  document.getElementById('navbar').style.display = 'flex';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('origin-prefix').textContent = window.location.origin + '/?r=';
+  auth.onAuthStateChanged(handleAuthChange);
+});
 
-  window.addEventListener('DOMContentLoaded', () => {
-    if (slug) {
-      showRedirectScreen(slug);
+// ══════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════
+function handleAuthChange(user) {
+  currentUser = user;
+  const avatar    = document.getElementById('navAvatar');
+  const name      = document.getElementById('navName');
+  const signInBtn = document.getElementById('navSignIn');
+  const signOutBtn= document.getElementById('navSignOut');
+  const loginPrompt = document.getElementById('loginPrompt');
+  const dashboard   = document.getElementById('dashboard');
+
+  if (user) {
+    if (user.photoURL) { avatar.src = user.photoURL; avatar.style.display = 'block'; }
+    name.textContent = user.displayName || user.email;
+    name.style.display = 'block';
+    signInBtn.style.display = 'none';
+    signOutBtn.style.display = 'flex';
+    loginPrompt.style.display = 'none';
+    loadUserLinks(user.uid);
+  } else {
+    avatar.style.display = 'none';
+    name.style.display = 'none';
+    signInBtn.style.display = 'flex';
+    signOutBtn.style.display = 'none';
+    loginPrompt.style.display = 'block';
+    dashboard.style.display = 'none';
+  }
+}
+
+function signInWithGoogle() {
+  auth.signInWithPopup(googleProvider).catch(err => showResult('error', 'Sign-in failed: ' + err.message));
+}
+function signOut() { auth.signOut(); }
+
+// ══════════════════════════════════════════════
+//  BLOCKED DOMAINS
+// ══════════════════════════════════════════════
+const BLOCKED = ['bit.ly','tinyurl.com','t.co','grabify.link','iplogger.org','blasze.tk','discord.gift','steampowered.gift'];
+
+// ══════════════════════════════════════════════
+//  RATE LIMIT
+// ══════════════════════════════════════════════
+function getRateData() { try { return JSON.parse(localStorage.getItem('rl')||'{"c":0,"s":0}'); } catch { return {c:0,s:0}; } }
+function checkRate() {
+  const now=Date.now(), rl=getRateData();
+  if (now-rl.s > 600000) return null;
+  if (rl.c >= 5) return `Rate limit hit. Wait ~${Math.ceil((600000-(now-rl.s))/60000)} min.`;
+  return null;
+}
+function bumpRate() {
+  const now=Date.now(); let rl=getRateData();
+  if (now-rl.s > 600000) rl={c:0,s:now};
+  rl.c++; localStorage.setItem('rl',JSON.stringify(rl));
+}
+
+// ══════════════════════════════════════════════
+//  VALIDATION
+// ══════════════════════════════════════════════
+function validateUrl(url) {
+  if (!url.startsWith('https://')) return 'Only HTTPS URLs are allowed.';
+  let p; try { p=new URL(url); } catch { return 'Invalid URL.'; }
+  const h=p.hostname.toLowerCase();
+  if (!h.includes('.')||h==='localhost'||/^\d+\.\d+\.\d+\.\d+$/.test(h)) return 'Invalid domain.';
+  for (const b of BLOCKED) if (h===b||h.endsWith('.'+b)) return `Domain "${h}" is blocked.`;
+  if (url.length>2000) return 'URL too long (max 2000 chars).';
+  return null;
+}
+
+// ══════════════════════════════════════════════
+//  SLUG HELPERS
+// ══════════════════════════════════════════════
+function genSlug(n=8){const c='abcdefghijkmnpqrstuvwxyz23456789';return Array.from({length:n},()=>c[Math.floor(Math.random()*c.length)]).join('');}
+function cleanSlug(s){return s.toLowerCase().replace(/[^a-z0-9\-_]/g,'').slice(0,32);}
+
+// ══════════════════════════════════════════════
+//  CREATE LINK
+// ══════════════════════════════════════════════
+async function create() {
+  const longUrl  = document.getElementById('longUrl').value.trim();
+  const rawSlug  = document.getElementById('customSlug').value.trim();
+  const expiry   = document.getElementById('expiry').value;
+  const btn      = document.getElementById('createBtn');
+
+  const urlErr = validateUrl(longUrl);
+  if (urlErr) return showResult('error', urlErr);
+  const rateErr = checkRate();
+  if (rateErr) return showResult('error', rateErr);
+
+  const customSlug = cleanSlug(rawSlug);
+  if (rawSlug && customSlug !== rawSlug) return showResult('error','Slug: letters, numbers, hyphens, underscores only.');
+
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Shortening...';
+
+  try {
+    let finalSlug = customSlug;
+    if (finalSlug) {
+      const ex = await db.ref('links/'+finalSlug).once('value');
+      if (ex.exists()) { showResult('error',`"/${finalSlug}" is already taken.`); btn.disabled=false; btn.textContent='Shorten URL'; return; }
     } else {
-      showCreatorUI();
-    }
-  });
-
-  function showRedirectScreen(slug) {
-    document.body.innerHTML = `
-      <div class="container redirect-screen" style="z-index:1;position:relative;">
-        <div class="logo">drk<span>.</span>link</div>
-        <p class="redirect-message">Resolving short link...</p>
-        <div class="progress-bar"><div class="progress-fill"></div></div>
-      </div>
-    `;
-
-    db.ref('links/' + slug).once('value').then(snap => {
-      if (snap.exists()) {
-        const dest = snap.val().url || snap.val();
-        document.querySelector('.redirect-message').textContent = 'Redirecting you to';
-        document.querySelector('.redirect-screen').insertAdjacentHTML('beforeend',
-          `<p class="redirect-url">${dest}</p>`
-        );
-        setTimeout(() => { window.location.href = dest; }, 1500);
-      } else {
-        document.querySelector('.redirect-message').textContent = '404 — Short link not found.';
-        document.querySelector('.redirect-message').style.color = 'var(--error)';
-        document.querySelector('.progress-fill').style.background = 'var(--error)';
-        setTimeout(() => { window.location.href = '/'; }, 2500);
+      for (let i=0;i<5;i++){
+        const c=genSlug(8);
+        const ex=await db.ref('links/'+c).once('value');
+        if (!ex.exists()){finalSlug=c;break;}
       }
-    }).catch(() => {
-      document.querySelector('.redirect-message').textContent = 'Connection error. Returning home...';
-    });
-  }
-
-  function showCreatorUI() {
-    document.getElementById('app').style.display = 'block';
-  }
-
-  async function create() {
-    const longUrl = document.getElementById('longUrl').value.trim();
-    const customSlug = document.getElementById('customSlug').value.trim();
-    const btn = document.getElementById('createBtn');
-    const result = document.getElementById('result');
-
-    if (!longUrl) return showResult('error', 'Please enter a URL.');
-    if (!longUrl.startsWith('http://') && !longUrl.startsWith('https://')) {
-      return showResult('error', 'URL must start with http:// or https://');
+      if (!finalSlug) throw new Error('Could not generate unique slug. Try again.');
     }
 
-    const finalSlug = customSlug || Math.random().toString(36).slice(2, 7);
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span>Shortening...';
+    const expiryMap = {'1h':36e5,'24h':864e5,'7d':6048e5,'30d':2592e6};
+    const expiresAt = expiry==='never' ? null : Date.now()+(expiryMap[expiry]||0);
 
-    try {
-      // Check if slug is taken
-      const existing = await db.ref('links/' + finalSlug).once('value');
-      if (existing.exists() && customSlug) {
-        showResult('error', `"/${customSlug}" is already taken. Try another.`);
-        btn.disabled = false;
-        btn.textContent = 'Shorten URL';
-        return;
-      }
-
-      await db.ref('links/' + finalSlug).set({
-        url: longUrl,
-        created: Date.now()
+    const payload = {
+      url: longUrl, created: Date.now(), clicks: 0,
+      ...(expiresAt && {expiresAt}),
+      ...(currentUser && {uid: currentUser.uid})
+    };
+    await db.ref('links/'+finalSlug).set(payload);
+    if (currentUser) {
+      await db.ref(`users/${currentUser.uid}/links/${finalSlug}`).set({
+        url: longUrl, created: Date.now(), clicks: 0, ...(expiresAt && {expiresAt})
       });
-
-      const shortLink = window.location.origin + '/?r=' + finalSlug;
-      showResult('success', shortLink);
-      document.getElementById('longUrl').value = '';
-      document.getElementById('customSlug').value = '';
-    } catch (e) {
-      showResult('error', 'Firebase error: ' + e.message);
     }
 
-    btn.disabled = false;
-    btn.textContent = 'Shorten URL';
+    bumpRate();
+    const shortLink = window.location.origin+'/?r='+finalSlug;
+    showResult('success', shortLink, finalSlug, expiresAt);
+    document.getElementById('longUrl').value='';
+    document.getElementById('customSlug').value='';
+  } catch(e) { showResult('error','Error: '+e.message); }
+
+  btn.disabled=false; btn.textContent='Shorten URL';
+}
+
+// ══════════════════════════════════════════════
+//  SHOW RESULT
+// ══════════════════════════════════════════════
+function showResult(type, msg, slug, expiresAt) {
+  const r = document.getElementById('result');
+  r.className = 'result show '+type;
+  if (type==='success') {
+    r.dataset.link = msg;
+    r.innerHTML = `
+      <div class="result-label">Your short link</div>
+      <div class="result-link">
+        <span>${esc(msg)}</span>
+        <button class="copy-btn" id="copyBtn" onclick="copyLink()">Copy</button>
+      </div>
+      <div class="result-meta">
+        <div class="meta-item">Clicks <span>0</span></div>
+        <div class="meta-item">Slug <span>/${esc(slug)}</span></div>
+        <div class="meta-item">Expires <span>${expiresAt ? new Date(expiresAt).toLocaleDateString() : 'Never'}</span></div>
+      </div>`;
+  } else {
+    r.innerHTML = `<div class="result-label">Error</div><div style="font-size:0.8rem;margin-top:0.25rem">${esc(msg)}</div>`;
   }
+}
 
-  function showResult(type, message) {
-    const result = document.getElementById('result');
-    result.className = 'result show ' + type;
+// ══════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════
+function loadUserLinks(uid) {
+  const dash = document.getElementById('dashboard');
+  dash.style.display = 'block';
+  document.getElementById('linkList').innerHTML = '<div class="dash-empty"><span class="spinner-muted"></span></div>';
+  db.ref(`users/${uid}/links`).orderByChild('created').on('value', snap => {
+    const items = [];
+    snap.forEach(child => items.unshift({slug: child.key, ...child.val()}));
+    document.getElementById('dashCount').textContent = items.length+' link'+(items.length!==1?'s':'');
+    renderLinks(items);
+  });
+}
 
-    if (type === 'success') {
-      result.innerHTML = `
-        <div class="result-label">Your short link</div>
-        <div class="result-link">
-          <span>${message}</span>
-          <button class="copy-btn" onclick="copyLink('${message}')">Copy</button>
-        </div>
-      `;
-    } else {
-      result.innerHTML = `
-        <div class="result-label">Error</div>
-        <div>${message}</div>
-      `;
+function renderLinks(items) {
+  const list = document.getElementById('linkList');
+  if (!items.length) { list.innerHTML='<div class="dash-empty">No links yet. Create your first one above!</div>'; return; }
+  list.innerHTML = items.map(item=>`
+    <div class="link-item">
+      <div class="link-item-info">
+        <div class="link-item-short">${window.location.origin}/?r=${esc(item.slug)}</div>
+        <div class="link-item-dest">${esc(item.url)}</div>
+        <div class="link-item-meta"><span>${item.clicks||0}</span> clicks · ${item.expiresAt?'Expires '+new Date(item.expiresAt).toLocaleDateString():'No expiry'}</div>
+      </div>
+      <div class="link-actions">
+        <button class="action-btn" onclick="copyDirect('${esc(window.location.origin+'/?r='+item.slug)}',this)">Copy</button>
+        <button class="action-btn del" onclick="deleteLink('${esc(item.slug)}')">Del</button>
+      </div>
+    </div>`).join('');
+}
+
+async function deleteLink(slug) {
+  if (!currentUser || !confirm(`Delete /${slug}? This cannot be undone.`)) return;
+  await db.ref('links/'+slug).remove();
+  await db.ref(`users/${currentUser.uid}/links/${slug}`).remove();
+}
+
+function copyDirect(link, btn) {
+  navigator.clipboard.writeText(link).then(()=>{btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});
+}
+
+// ══════════════════════════════════════════════
+//  COPY
+// ══════════════════════════════════════════════
+function copyLink() {
+  const link = document.getElementById('result').dataset.link; if(!link) return;
+  navigator.clipboard.writeText(link).then(()=>{
+    const b=document.getElementById('copyBtn'); if(b){b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',2000);}
+  }).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=link;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    const b=document.getElementById('copyBtn');if(b){b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',2000);}
+  });
+}
+
+// ══════════════════════════════════════════════
+//  REDIRECT SCREEN
+// ══════════════════════════════════════════════
+let _dest = null;
+function showRedirectScreen(slug) {
+  document.body.innerHTML=`
+    <div class="container redirect-screen" style="z-index:1;position:relative;">
+      <div class="logo">drk<span>.</span>link</div>
+      <p class="redirect-message">Resolving link...</p>
+      <div class="progress-bar"><div class="progress-fill" id="pbar"></div></div>
+      <button class="skip-btn" id="skipBtn" style="display:none" onclick="window.location.href=_dest">Skip →</button>
+    </div>`;
+  db.ref('links/'+slug).once('value').then(snap=>{
+    if (!snap.exists()) {
+      document.querySelector('.redirect-message').textContent='404 — Link not found.';
+      document.querySelector('.redirect-message').style.color='var(--error)';
+      document.getElementById('pbar').style.background='var(--error)';
+      setTimeout(()=>window.location.href='/',2500); return;
     }
-  }
+    const data=snap.val();
+    if (data.expiresAt && Date.now()>data.expiresAt) {
+      document.querySelector('.redirect-message').textContent='This link has expired.';
+      document.querySelector('.redirect-message').style.color='var(--warn)';
+      setTimeout(()=>window.location.href='/',2500); return;
+    }
+    _dest=data.url;
+    db.ref('links/'+slug+'/clicks').transaction(c=>(c||0)+1);
+    if (data.uid) db.ref(`users/${data.uid}/links/${slug}/clicks`).transaction(c=>(c||0)+1);
+    document.querySelector('.redirect-message').textContent='Redirecting to:';
+    document.querySelector('.redirect-screen').insertAdjacentHTML('beforeend',`<p class="redirect-url">${esc(_dest)}</p>`);
+    document.getElementById('skipBtn').style.display='inline-block';
+    setTimeout(()=>window.location.href=_dest,1500);
+  }).catch(()=>{
+    document.querySelector('.redirect-message').textContent='Connection error.';
+    document.querySelector('.redirect-message').style.color='var(--error)';
+  });
+}
 
-  function copyLink(link) {
-    navigator.clipboard.writeText(link).then(() => {
-      const btn = document.querySelector('.copy-btn');
-      if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 2000); }
-    });
-  }
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>
 
-<!-- Creator UI -->
-<div class="container" id="app" style="display:none;">
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar" style="display:none">
+  <div class="nav-logo">drk<span>.</span>link</div>
+  <div class="nav-right">
+    <img class="user-avatar" id="navAvatar" src="" alt="" />
+    <span class="user-name" id="navName"></span>
+    <button class="sign-btn" id="navSignIn" onclick="signInWithGoogle()" style="display:none">
+      <svg class="g-icon" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+      Sign in
+    </button>
+    <button class="sign-btn" id="navSignOut" onclick="signOut()" style="display:none">Sign out</button>
+  </div>
+</nav>
+
+<!-- APP -->
+<div class="container" id="app" style="display:none">
   <div class="logo">drk<span>.</span>link</div>
   <p class="tagline">Minimal URL shortener</p>
 
   <div class="card">
     <div class="input-group">
-      <label for="longUrl">Destination URL</label>
-      <input
-        type="url"
-        id="longUrl"
-        placeholder="https://your-very-long-url.com/goes/here"
-        onkeydown="if(event.key==='Enter') create()"
-      />
+      <label for="longUrl">Destination URL (HTTPS only)</label>
+      <input type="url" id="longUrl" placeholder="https://your-long-url.com/goes/here" onkeydown="if(event.key==='Enter')create()" />
     </div>
-
-    <div class="input-group">
-      <label for="customSlug">Custom slug (optional)</label>
-      <div class="slug-row">
-        <span class="slug-prefix" id="origin-prefix">…/?r=</span>
-        <input
-          type="text"
-          id="customSlug"
-          placeholder="my-link"
-          onkeydown="if(event.key==='Enter') create()"
-        />
+    <div class="row-two">
+      <div class="input-group">
+        <label for="customSlug">Custom slug (optional)</label>
+        <div class="slug-row">
+          <span class="slug-prefix" id="origin-prefix">…/?r=</span>
+          <input type="text" id="customSlug" placeholder="my-link" maxlength="32" onkeydown="if(event.key==='Enter')create()" />
+        </div>
+      </div>
+      <div class="input-group">
+        <label for="expiry">Expires after</label>
+        <select id="expiry">
+          <option value="never">Never</option>
+          <option value="1h">1 Hour</option>
+          <option value="24h">24 Hours</option>
+          <option value="7d">7 Days</option>
+          <option value="30d">30 Days</option>
+        </select>
       </div>
     </div>
-
     <button id="createBtn" onclick="create()">Shorten URL</button>
-
+    <p class="rate-notice">Max 5 links per 10 minutes</p>
     <div class="result" id="result"></div>
+
+    <div class="login-prompt" id="loginPrompt">
+      <p>Sign in to save your links, track clicks,<br/>and delete them anytime.</p>
+      <button class="google-btn" onclick="signInWithGoogle()">
+        <svg viewBox="0 0 18 18" width="16" height="16"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+        Continue with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- Dashboard (signed-in only) -->
+  <div class="dashboard" id="dashboard" style="display:none">
+    <div class="dash-header">
+      <span class="dash-title">Your links</span>
+      <span class="dash-count" id="dashCount"></span>
+    </div>
+    <div class="link-list" id="linkList"></div>
   </div>
 
   <p class="footer">Powered by Firebase + GitHub Pages</p>
 </div>
-
-<script>
-  // Set origin prefix dynamically
-  document.getElementById('origin-prefix').textContent = window.location.origin + '/?r=';
-</script>
 
 </body>
 </html>

@@ -10,6 +10,8 @@
   <meta property="og:type" content="website"/>
   <meta name="twitter:card" content="summary"/>
   <meta name="robots" content="index, follow"/>
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://challenges.cloudflare.com https://pagead2.googlesyndication.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com https://googleads.g.doubleclick.net; object-src 'none'; base-uri 'self';"/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='78' x='8' font-size='72' font-family='monospace' fill='%23e8ff47'>d</text></svg>"/>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9926451246356367" crossorigin="anonymous"></script>
   <!-- Cloudflare Turnstile CAPTCHA — free at dash.cloudflare.com/turnstile -->
@@ -191,6 +193,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 
 <script>
 'use strict';
@@ -214,9 +217,25 @@ const RESERVED_SLUGS = new Set([
   'static','support','terms','undefined','user','users','www',
 ]);
 
+// ⑧ Known malicious / tracking / phishing domains
+// Note: this is a best-effort list — determined attackers use new domains.
+// Real protection = Firebase rules + rate limiting + CAPTCHA layered together.
 const BLOCKED_DOMAINS = [
-  'bit.ly','tinyurl.com','t.co','grabify.link',
-  'iplogger.org','blasze.tk','discord.gift','steampowered.gift',
+  // IP loggers
+  'grabify.link','iplogger.org','blasze.tk','2no.co','iplis.ru',
+  'yip.su','ps3cfw.com','lovebird.guru','yourfreetun.net',
+  // Shortener chains (no chaining)
+  'bit.ly','tinyurl.com','t.co','ow.ly','rb.gy','is.gd','v.gd',
+  'buff.ly','short.io','cutt.ly','tiny.cc',
+  // Common phishing templates
+  'discord.gift','discordnitro.gift','steampowered.gift',
+  'steamcommunity.gift','free-nitro.ru',
+];
+
+// ⑧b Block suspicious TLD patterns (regex checked against full hostname)
+const BLOCKED_PATTERNS = [
+  /\.tk$/,/\.ml$/,/\.ga$/,/\.cf$/,  // free TLDs heavily abused
+  /free.?nitro/i, /discord.?gift/i, /steam.?gift/i,
 ];
 
 // ══════════════════════════════════════════════════════
@@ -232,6 +251,13 @@ firebase.initializeApp({
   measurementId: "G-0W5HFRHRFQ",
   databaseURL: "https://drkexternal-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
+
+// ── App Check — locks Firebase to requests from drk.qzz.io only ──
+const appCheck = firebase.appCheck();
+appCheck.activate(
+  new firebase.appCheck.ReCaptchaV3Provider('drkexternalv3capcha'),
+  true // auto-refresh tokens silently
+);
 const db   = firebase.database();
 const auth = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
@@ -298,6 +324,8 @@ function initCaptcha() {
     theme: 'dark',
     callback: token => { _captchaToken = token; },
     'expired-callback': () => { _captchaToken = null; },
+    'error-callback': () => { _captchaToken = null; },
+    'timeout-callback': () => { _captchaToken = null; },
   });
 }
 
@@ -362,7 +390,11 @@ function handleAuthChange(user) {
 function signInWithGoogle() {
   auth.signInWithPopup(googleProvider).catch(err => showResult('error', 'Sign-in failed: ' + err.message));
 }
-function signOut() { auth.signOut(); }
+function signOut() {
+  // ⑤ Clean up listener before signing out
+  if (_linksListenerRef) { _linksListenerRef.off('value'); _linksListenerRef = null; }
+  auth.signOut();
+}
 
 // ══════════════════════════════════════════════════════
 //  ⑧ VALIDATION
@@ -373,6 +405,7 @@ function validateUrl(url) {
   const h = p.hostname.toLowerCase();
   if (!h.includes('.') || h === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(h)) return 'Invalid domain.';
   for (const b of BLOCKED_DOMAINS) if (h === b || h.endsWith('.' + b)) return `Domain "${h}" is blocked.`;
+  for (const pat of BLOCKED_PATTERNS) if (pat.test(h)) return `Domain "${h}" matches a blocked pattern.`;
   if (url.length > 2000) return 'URL too long.';
   return null;
 }
@@ -399,17 +432,17 @@ async function create() {
   const expiry   = document.getElementById('expiry').value;
   const btn      = document.getElementById('createBtn');
 
-  // CAPTCHA check (only if key is configured and not the demo key)
-  if (CFG.TURNSTILE_SITEKEY && CFG.TURNSTILE_SITEKEY !== '1x00000000000000000000AA') {
+  // CAPTCHA check
+  if (CFG.TURNSTILE_SITEKEY) {
     if (!_captchaToken) return showResult('error', 'Please complete the CAPTCHA.');
   }
 
   const urlErr = validateUrl(longUrl);
-  if (urlErr) return showResult('error', urlErr);
+  if (urlErr) { resetCaptcha(); return showResult('error', urlErr); }
 
   const customSlug = cleanSlug(rawSlug);
-  if (rawSlug && customSlug !== rawSlug) return showResult('error', 'Slug: letters, numbers, hyphens, underscores only.');
-  if (customSlug && RESERVED_SLUGS.has(customSlug)) return showResult('error', `"${customSlug}" is a reserved word.`);
+  if (rawSlug && customSlug !== rawSlug) { resetCaptcha(); return showResult('error', 'Slug: letters, numbers, hyphens, underscores only.'); }
+  if (customSlug && RESERVED_SLUGS.has(customSlug)) { resetCaptcha(); return showResult('error', `"${customSlug}" is a reserved word.`); }
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Shortening...';
@@ -521,13 +554,21 @@ function showResult(type, msg, slug, expiresAt) {
 let _allLinks = [];
 let _currentPage = 1;
 
+let _linksListenerRef = null;
+
 function loadUserLinks(uid, page = 1) {
   const dash = document.getElementById('dashboard');
   dash.style.display = 'block';
   document.getElementById('linkList').innerHTML = '<div class="dash-empty"><span class="spinner-muted"></span></div>';
 
-  // Remove any old listener before attaching new one
-  db.ref(`users/${uid}/links`).orderByChild('created').on('value', snap => {
+  // ⑤ Detach previous listener to prevent stacking on login/logout cycles
+  if (_linksListenerRef) {
+    _linksListenerRef.off('value');
+    _linksListenerRef = null;
+  }
+
+  _linksListenerRef = db.ref(`users/${uid}/links`).orderByChild('created');
+  _linksListenerRef.on('value', snap => {
     _allLinks = [];
     snap.forEach(child => _allLinks.unshift({ slug: child.key, ...child.val() }));
     _currentPage = page;
@@ -718,8 +759,12 @@ function showRedirectScreen(slug) {
     }
     const data = snap.val();
     if (data.expiresAt && Date.now() > data.expiresAt) {
-      // Clean up expired link automatically
-      db.ref('links/' + slug).remove().catch(() => {});
+      // ④ Clean up BOTH nodes when expired
+      Promise.all([
+        db.ref('links/' + slug).remove(),
+        data.uid ? db.ref(`users/${data.uid}/links/${slug}`).remove() : Promise.resolve(),
+        data.uid ? db.ref(`users/${data.uid}/hashes/${hashUrl(data.url||'')}`).remove() : Promise.resolve(),
+      ]).catch(() => {});
       document.querySelector('.redirect-message').textContent = 'This link has expired.';
       document.querySelector('.redirect-message').style.color = 'var(--warn)';
       setTimeout(() => window.location.href = '/', 2500); return;
@@ -729,8 +774,24 @@ function showRedirectScreen(slug) {
     let domain = '';
     try { domain = new URL(_dest).hostname; } catch { domain = _dest; }
 
-    db.ref('links/' + slug + '/clicks').transaction(c => (c || 0) + 1);
-    if (data.uid) db.ref(`users/${data.uid}/links/${slug}/clicks`).transaction(c => (c || 0) + 1);
+    // ── Click tracking — best-effort without a backend ──────────────────
+    // Layer 1: sessionStorage  → one count per browser tab session per slug
+    // Layer 2: localStorage    → one count per 24 hrs per slug per device
+    // Layer 3: Firebase rule   → write only allowed if newVal === oldVal + 1
+    // What this stops: accidental double-counts, casual abuse, page refreshes
+    // What this doesn't stop: determined attacker with DevTools (needs backend)
+    const sessKey = 'ck_s_' + slug;
+    const lsKey   = 'ck_l_' + slug;
+    const lsData  = (() => { try { return JSON.parse(localStorage.getItem(lsKey)||'{}'); } catch { return {}; } })();
+    const alreadyThisSession = sessionStorage.getItem(sessKey);
+    const alreadyToday = lsData.t && (Date.now() - lsData.t) < 86400000;
+
+    if (!alreadyThisSession && !alreadyToday) {
+      sessionStorage.setItem(sessKey, '1');
+      localStorage.setItem(lsKey, JSON.stringify({ t: Date.now() }));
+      db.ref('links/' + slug + '/clicks').transaction(c => (c || 0) + 1);
+      if (data.uid) db.ref(`users/${data.uid}/links/${slug}/clicks`).transaction(c => (c || 0) + 1);
+    }
 
     document.querySelector('.redirect-message').textContent = 'You are being redirected to:';
     document.querySelector('.redirect-screen').insertAdjacentHTML('beforeend', `
@@ -751,6 +812,7 @@ function showRedirectScreen(slug) {
 //  UTILS
 // ══════════════════════════════════════════════════════
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// hashUrl is defined earlier but referenced here too — safe since JS hoists functions
 </script>
 
 <!-- ═══════════ HTML ═══════════ -->

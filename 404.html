@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting...</title>
+  <script>
+    // GitHub Pages 404 trick:
+    // When someone visits /abc123, GitHub serves this 404.html
+    // We grab the slug from the path and send them to index.html with ?r=slug
+    const path = window.location.pathname.replace(/^\//, '').split('/')[0];
+    if (path && path !== '404.html') {
+      window.location.replace('/?r=' + encodeURIComponent(path));
+    } else {
+      window.location.replace('/');
+    }
+  </script>
+</head>
+<body>
+  <p style="font-family:monospace;color:#555;text-align:center;margin-top:40vh;">Redirecting...</p>
+</body>
+</html>

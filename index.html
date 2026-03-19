@@ -388,8 +388,18 @@ function handleAuthChange(user) {
   }
 }
 
-function signInWithGoogle() {
-  auth.signInWithPopup(googleProvider).catch(err => showResult('error', 'Sign-in failed: ' + err.message));
+async function signInWithGoogle() {
+  try {
+    // Wait for App Check token to be ready before sign-in
+    await firebase.appCheck().getToken(true);
+    await auth.signInWithPopup(googleProvider);
+  } catch(err) {
+    if (err.code === 'appCheck/token-error') {
+      showResult('error', 'App Check failed. Please refresh and try again.');
+    } else {
+      showResult('error', 'Sign-in failed: ' + err.message);
+    }
+  }
 }
 function signOut() {
   // ⑤ Clean up listener before signing out

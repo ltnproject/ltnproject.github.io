@@ -471,6 +471,9 @@ function initMap(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     if(S.map) return;
     S.map=L.map('leaflet-map',{center:CENTER,zoom:ZOOM,zoomControl:false,attributionControl:false});
+    // #region agent log initMap first
+    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H1',location:'index.html:initMap:first',message:'Leaflet initialized in leaflet-map',data:{hasLeafletMap:!!document.getElementById('leaflet-map'),hasSMap:!!S.map},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     // Stadia Alidade Smooth Dark — more detail, road labels, brighter
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
@@ -684,7 +687,7 @@ async function onSignedIn(u){
   bindEvents();
 }
 
-function initMap() {
+function initMap_simple() {
   // #region agent log initMap second + element presence
   fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H1',location:'index.html:initMap:second',message:'initMap() called (second definition)',data:{hasMapEl:!!document.getElementById('map'),hasLeafletMap:!!document.getElementById('leaflet-map')},timestamp:Date.now()})}).catch(()=>{});
   // #endregion

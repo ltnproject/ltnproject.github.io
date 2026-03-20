@@ -335,6 +335,26 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </button>
 
 <script>
+// #region agent log script start
+fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H2',location:'index.html:script-start',message:'Page script boot',data:{hasLeaflet:!!window.L,hasFirebase:!!window.firebase,hasLeafletMap:!!document.getElementById('leaflet-map'),hasMapEl:!!document.getElementById('map'),hostname:location.hostname},timestamp:Date.now()})}).catch(()=>{});
+// #endregion
+
+// #region agent log window error
+window.addEventListener('error',e=>{
+  try{
+    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H4',location:'index.html:window-error',message:'Uncaught error',data:{message:e?.message,filename:e?.filename,lineno:e?.lineno,colno:e?.colno},timestamp:Date.now()})}).catch(()=>{});
+  }catch{}
+});
+// #endregion
+
+// #region agent log unhandled rejection
+window.addEventListener('unhandledrejection',e=>{
+  try{
+    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H4',location:'index.html:unhandledrejection',message:'Unhandled promise rejection',data:{reason:(e?.reason&&e.reason.message)?e.reason.message:String(e?.reason)},timestamp:Date.now()})}).catch(()=>{});
+  }catch{}
+});
+// #endregion
+
 // ── CONFIG ───────────────────────────────
 const FB = {
   apiKey:"AIzaSyAv__llreM9IMHGkSSd7sfLESK-C5f8dwk",
@@ -373,7 +393,16 @@ const STH={available:'มีน้ำมัน',partial:'มีบางชน�
 const S={user:null,stations:[],confirms:{},myReports:0,filter:null,selId:null,map:null,markers:{},alertsOn:false,rep:{station:'',action:'',fuels:[]},unsub:null};
 
 // ── FIREBASE ─────────────────────────────
-firebase.initializeApp(FB);
+let __fbInitOk=false;
+try{
+  firebase.initializeApp(FB);
+  __fbInitOk=true;
+}catch(e){
+  // #region agent log firebase init error
+  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H3',location:'index.html:firebase-init',message:'firebase.initializeApp failed',data:{error:(e&&e.message)?e.message:String(e)},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+  throw e;
+}
 const db=firebase.firestore(), auth=firebase.auth();
 const gProv=new firebase.auth.GoogleAuthProvider();
 gProv.addScope('profile'); gProv.addScope('email');
@@ -507,6 +536,9 @@ async function fetchOSMStations(lat,lng){
     toast('⛽ พบ '+data.elements.length+' ปั๊มใกล้คุณ');
   }catch(e){
     console.warn('Overpass:',e);
+    // #region agent log overpass failure
+    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H5',location:'index.html:overpass',message:'Overpass fetch failed',data:{error:(e&&e.message)?e.message:String(e)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     toast('⚠ โหลดปั๊มไม่ได้');
   }
 }
@@ -629,6 +661,9 @@ function showSignin(){
   g('scr-loading').classList.add('hidden');
   g('scr-signin').classList.remove('hidden');
   if(GOOGLE_CLIENT_ID.startsWith('YOUR_'))g('oauth-hint').classList.remove('hidden');
+  // #region agent log showSignin
+  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H3',location:'index.html:showSignin',message:'Sign-in screen shown',data:{oauthHintVisible:!!g('oauth-hint') && !g('oauth-hint').classList.contains('hidden'),fbInitOk:__fbInitOk},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
 }
   
 async function onSignedIn(u){
@@ -642,16 +677,29 @@ async function onSignedIn(u){
   g('scr-signin').classList.add('hidden');
   g('scr-main').classList.remove('hidden');
   g('btn-fab').classList.remove('hidden');
+  // #region agent log onSignedIn pre-map
+  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H1',location:'index.html:onSignedIn',message:'User signed in, starting initMap',data:{hasLeaflet:!!window.L,hasLeafletMap:!!document.getElementById('leaflet-map'),hasMapEl:!!document.getElementById('map')},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   initMap();
   bindEvents();
 }
 
 function initMap() {
-  map = L.map('map').setView([13.7563, 100.5018], 10);
+  // #region agent log initMap second + element presence
+  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H1',location:'index.html:initMap:second',message:'initMap() called (second definition)',data:{hasMapEl:!!document.getElementById('map'),hasLeafletMap:!!document.getElementById('leaflet-map')},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+  try{
+    map = L.map('map').setView([13.7563, 100.5018], 10);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+  }catch(e){
+    // #region agent log initMap second error
+    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H4',location:'index.html:initMap:second',message:'initMap() failed',data:{error:(e&&e.message)?e.message:String(e)},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    throw e;
+  }
 }
 
 // ── EVENTS ───────────────────────────────

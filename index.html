@@ -1,894 +1,618 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>drk.link — URL Shortener</title>
-  <meta name="description" content="Fast, minimal URL shortener."/>
-  <meta property="og:title" content="drk.link — URL Shortener"/>
-  <meta property="og:description" content="Fast, minimal URL shortener. Create short links instantly."/>
-  <meta property="og:type" content="website"/>
-  <meta name="twitter:card" content="summary"/>
-  <meta name="robots" content="index, follow"/>
-  <meta name="google-site-verification" content="MwsV2qXhMQ4FBR3Kg5_7arFTS0ZrKm85V3jn2djfCz8"/>
-  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN"/>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://challenges.cloudflare.com https://pagead2.googlesyndication.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com https://googleads.g.doubleclick.net; object-src 'none'; base-uri 'self';"/>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='78' x='8' font-size='72' font-family='monospace' fill='%23e8ff47'>d</text></svg>"/>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9926451246356367" crossorigin="anonymous"></script>
-  <!-- Cloudflare Turnstile CAPTCHA — free at dash.cloudflare.com/turnstile -->
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>FuelRadar — เช็คน้ำมันแบบเรียลไทม์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --bg:#0a0a0a;--surface:#111111;--border:#222222;
-      --accent:#e8ff47;--accent-dim:#b8cc2a;
-      --text:#f0f0f0;--muted:#555;
-      --error:#ff4d4d;--success:#47ffb2;--warn:#ffb347;
-    }
-    body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;
-      min-height:100vh;display:flex;flex-direction:column;align-items:center;
-      padding:0 1rem 3rem;overflow-x:hidden}
-    body::before{content:'';position:fixed;inset:0;
-      background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
-      background-size:40px 40px;opacity:.4;pointer-events:none;z-index:0}
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --amber:#FFB800;--green:#00FF88;--red:#FF3B5C;--blue:#38BDF8;
+  --bg:#07090D;--bg2:#0C1018;--bg3:#111820;
+  --border:rgba(255,184,0,0.12);--border-hi:rgba(255,184,0,0.35);
+  --text:#E2D9BF;--muted:#50483A;
+  --th:'Sarabun',sans-serif;--mono:'Share Tech Mono',monospace;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--th)}
 
-    /* NAV */
-    .navbar{position:relative;z-index:10;width:100%;max-width:560px;
-      display:flex;align-items:center;justify-content:space-between;
-      padding:1.5rem 0;margin-bottom:1rem;border-bottom:1px solid var(--border)}
-    .nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-1px}
-    .nav-logo span{color:var(--accent)}
-    .nav-right{display:flex;align-items:center;gap:.75rem}
-    .user-avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);object-fit:cover;display:none}
-    .user-name{font-size:.7rem;color:var(--muted);display:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .sign-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
-      font-family:'Space Mono',monospace;font-size:.65rem;padding:.4rem .8rem;
-      cursor:pointer;letter-spacing:.05em;text-transform:uppercase;
-      transition:all .15s;margin-top:0;width:auto;display:flex;align-items:center;gap:.4rem}
-    .sign-btn:hover{border-color:var(--accent);color:var(--accent);background:transparent}
+/* ── LAYOUT SHELL ── */
+/* The entire app uses position:fixed children so nothing causes scroll */
+#scr-loading,#scr-signin{
+  position:fixed;inset:0;z-index:900;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:28px 20px;text-align:center;
+}
+#scr-main{
+  position:fixed;inset:0;z-index:10;
+  display:flex;flex-direction:column;
+}
 
-    /* MAIN */
-    .container{position:relative;z-index:1;width:100%;max-width:560px}
-    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.5rem,8vw,4rem);letter-spacing:-2px;line-height:1;margin-bottom:.25rem}
-    .logo span{color:var(--accent)}
-    .tagline{color:var(--muted);font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:3rem}
+.hidden{display:none!important}
 
-    /* CARD */
-    .card{background:var(--surface);border:1px solid var(--border);padding:2rem;position:relative}
-    .card::before{content:'';position:absolute;top:-1px;left:2rem;width:3rem;height:2px;background:var(--accent)}
-    .input-group{display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem}
-    label{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-    input{background:var(--bg);border:1px solid var(--border);color:var(--text);
-      font-family:'Space Mono',monospace;font-size:.85rem;padding:.85rem 1rem;
-      width:100%;outline:none;transition:border-color .2s}
-    input::placeholder{color:var(--muted)}
-    input:focus{border-color:var(--accent)}
-    .slug-row{display:flex;align-items:stretch;border:1px solid var(--border);transition:border-color .2s}
-    .slug-row:focus-within{border-color:var(--accent)}
-    .slug-prefix{background:#1a1a1a;color:var(--muted);font-family:'Space Mono',monospace;
-      font-size:.7rem;padding:.85rem .75rem;white-space:nowrap;
-      border-right:1px solid var(--border);display:flex;align-items:center}
-    .slug-row input{border:none;flex:1}
-    .slug-row input:focus{border-color:transparent}
-    .row-two{display:flex;gap:.75rem}
-    .row-two .input-group{flex:1}
-    select{background:var(--bg);border:1px solid var(--border);color:var(--text);
-      font-family:'Space Mono',monospace;font-size:.8rem;padding:.85rem .75rem;
-      width:100%;outline:none;transition:border-color .2s;cursor:pointer;appearance:none}
-    select:focus{border-color:var(--accent)}
-    button{width:100%;background:var(--accent);color:#000;font-family:'Syne',sans-serif;
-      font-weight:700;font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;
-      padding:1rem;border:none;cursor:pointer;transition:background .15s,transform .1s;margin-top:1.25rem}
-    button:hover{background:var(--accent-dim)}
-    button:active{transform:scale(.99)}
-    button:disabled{background:var(--muted);cursor:not-allowed;color:#888}
+/* ── LOADING ── */
+.spinner{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,184,0,.15);border-top-color:var(--amber);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:14px}
 
-    /* CAPTCHA wrapper */
-    .captcha-wrap{margin-top:1rem;display:flex;justify-content:center}
+/* ── SIGN-IN ── */
+.si-logo{font-family:var(--mono);font-size:34px;color:var(--amber);letter-spacing:4px}
+.si-logo span{opacity:.22}
+.si-sub{font-size:13px;color:var(--muted);margin-top:6px;margin-bottom:34px}
+.si-radar{width:128px;height:128px;border-radius:50%;border:1px solid rgba(255,184,0,.18);position:relative;margin-bottom:38px}
+.si-radar::before{content:'';position:absolute;inset:24px;border-radius:50%;border:1px solid rgba(255,184,0,.1)}
+.si-radar::after{content:'';position:absolute;inset:48px;border-radius:50%;border:1px solid rgba(255,184,0,.07)}
+.si-sweep{position:absolute;inset:0;border-radius:50%;overflow:hidden}
+.si-sweep::after{content:'';position:absolute;inset:0;background:conic-gradient(from 0deg,transparent,rgba(255,184,0,.2) 45deg,transparent 90deg);animation:sweep 3s linear infinite}
+@keyframes sweep{to{transform:rotate(360deg)}}
+.si-dot{position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);background:var(--amber);box-shadow:0 0 14px var(--amber)}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;max-width:290px;padding:13px 20px;border-radius:10px;border:1px solid var(--border-hi);background:var(--bg3);color:var(--text);font-family:var(--th);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s}
+.google-btn:hover{border-color:var(--amber);background:rgba(255,184,0,.08);color:var(--amber)}
+.google-btn:active{transform:scale(.97)}
+.si-note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.7}
+.si-warn{margin-top:12px;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,184,0,.2);background:rgba(255,184,0,.05);font-family:var(--mono);font-size:9px;color:var(--muted);max-width:290px;line-height:1.9;text-align:left}
+.si-warn a{color:var(--blue)}
 
-    /* RESULT */
-    .result{margin-top:1.5rem;padding:1rem;border:1px solid var(--border);background:var(--bg);display:none;animation:fadeIn .3s ease}
-    .result.show{display:block}
-    .result.error{border-color:var(--error)}
-    .result.success{border-color:var(--success)}
-    .result-label{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.5rem}
-    .result.error .result-label{color:var(--error)}
-    .result.success .result-label{color:var(--success)}
-    .result-link{font-size:.85rem;word-break:break-all;color:var(--text);display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
-    .result-meta{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);display:flex;gap:1rem;flex-wrap:wrap}
-    .meta-item{font-size:.65rem;color:var(--muted)}
-    .meta-item span{color:var(--text)}
-    .copy-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
-      font-family:'Space Mono',monospace;font-size:.65rem;padding:.3rem .6rem;
-      cursor:pointer;white-space:nowrap;margin-top:0;width:auto;
-      letter-spacing:.05em;text-transform:uppercase;transition:all .15s}
-    .copy-btn:hover{border-color:var(--accent);color:var(--accent);background:transparent}
+/* ── HEADER ── */
+.header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:9px 14px 7px;background:rgba(7,9,13,.97);border-bottom:1px solid var(--border);z-index:50}
+.logo-ring{animation:spin 8s linear infinite;flex-shrink:0}
+.logo-wrap{display:flex;align-items:center;gap:8px}
+.logo-name{font-family:var(--mono);font-size:17px;color:var(--amber);letter-spacing:1px}
+.logo-name span{opacity:.25}
+.logo-sub{font-size:10px;color:var(--muted)}
+.h-right{display:flex;align-items:center;gap:6px}
+.hbtn{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:5px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--th);font-size:11px;font-weight:600;transition:all .13s}
+.hbtn:hover{border-color:var(--border-hi);color:var(--text)}
+.hbtn.active{border-color:var(--amber);color:var(--amber);background:rgba(255,184,0,.08)}
+.pulse-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.hbtn.active .pulse-dot{box-shadow:0 0 5px var(--amber);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.avatar{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border-hi);overflow:hidden;cursor:pointer;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--amber);transition:border-color .15s}
+.avatar:hover{border-color:var(--amber)}
+.avatar img{width:100%;height:100%;object-fit:cover}
 
-    /* DUPLICATE NOTICE */
-    .dup-notice{margin-top:.75rem;padding:.6rem .75rem;background:#0f1a00;border:1px solid #2a3a00;font-size:.7rem;color:var(--accent-dim)}
+/* ── FILTERS ── */
+.filters{flex-shrink:0;padding:7px 0;background:rgba(7,9,13,.95);border-bottom:1px solid var(--border);z-index:40}
+.fscroll{display:flex;gap:5px;padding:0 14px;overflow-x:auto;scrollbar-width:none}
+.fscroll::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:4px 12px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-family:var(--th);font-size:12px;font-weight:600;cursor:pointer;transition:all .13s;white-space:nowrap}
+.chip.on{border-color:var(--amber);color:var(--amber);background:rgba(255,184,0,.08)}
+.chip:hover:not(.on){border-color:rgba(255,184,0,.22);color:var(--text)}
 
-    /* LOGIN PROMPT */
-    .login-prompt{margin-top:1.25rem;padding:1.25rem;border:1px dashed var(--border);text-align:center;display:none}
-    .login-prompt p{font-size:.7rem;color:var(--muted);margin-bottom:1rem;line-height:1.7}
-    .google-btn{display:inline-flex;align-items:center;gap:.6rem;background:#fff;color:#333;
-      font-family:'Space Mono',monospace;font-size:.75rem;padding:.65rem 1.25rem;
-      border:none;cursor:pointer;width:auto;margin-top:0;font-weight:700;transition:background .15s}
-    .google-btn:hover{background:#eee}
+/* ── MAP ── */
+/* KEY: use flex:1 with min-height:0 so the map takes all remaining space */
+#map-wrap{
+  flex:1;
+  min-height:0;      /* ← critical for flex children */
+  position:relative;
+}
+/* Leaflet map fills the wrapper absolutely */
+#leaflet-map{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+}
+.leaflet-tile-pane{filter:brightness(.48) saturate(.25) hue-rotate(185deg)}
+.leaflet-popup-content-wrapper{background:var(--bg3)!important;border:1px solid var(--border-hi)!important;border-radius:8px!important;box-shadow:0 8px 28px rgba(0,0,0,.75)!important;padding:0!important}
+.leaflet-popup-tip-container{display:none}
+.leaflet-popup-content{margin:0!important}
+.leaflet-popup-close-button{color:var(--muted)!important;top:8px!important;right:10px!important}
+.leaflet-control-attribution{background:rgba(7,9,13,.7)!important;color:#333!important;font-size:8px!important}
+.leaflet-control-attribution a{color:#444!important}
 
-    /* DASHBOARD */
-    .dashboard{margin-top:2rem}
-    .dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
-    .dash-title{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-    .dash-meta{font-size:.65rem;color:var(--muted);display:flex;gap:1rem;align-items:center}
-    .quota-bar{width:80px;height:4px;background:var(--border);overflow:hidden;display:inline-block;vertical-align:middle;margin-left:.4rem}
-    .quota-fill{height:100%;background:var(--accent);transition:width .3s}
-    .quota-fill.warn{background:var(--warn)}
-    .quota-fill.danger{background:var(--error)}
-    .link-list{display:flex;flex-direction:column;gap:.5rem}
-    .link-item{background:var(--surface);border:1px solid var(--border);padding:.85rem 1rem;
-      display:flex;align-items:center;gap:.75rem;animation:fadeIn .25s ease;transition:opacity .2s}
-    .link-item.deleting{opacity:.4;pointer-events:none}
-    .link-item.deleted{display:none}
-    .link-item-info{flex:1;min-width:0}
-    .link-item-short{font-size:.8rem;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .link-item-dest{font-size:.65rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.25rem}
-    .link-item-meta{font-size:.6rem;color:var(--muted);margin-top:.25rem}
-    .link-item-meta span{color:var(--text)}
-    .link-actions{display:flex;gap:.4rem;flex-shrink:0}
-    .action-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
-      font-family:'Space Mono',monospace;font-size:.6rem;padding:.25rem .5rem;
-      cursor:pointer;width:auto;margin-top:0;transition:all .15s;white-space:nowrap;
-      text-transform:uppercase;letter-spacing:.04em}
-    .action-btn:hover{border-color:var(--accent);color:var(--accent);background:transparent}
-    .action-btn.del:hover{border-color:var(--error);color:var(--error)}
-    .dash-empty{font-size:.75rem;color:var(--muted);text-align:center;padding:2rem 0}
-    .undo-toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
-      background:var(--surface);border:1px solid var(--border);padding:.6rem 1rem;
-      font-size:.7rem;display:flex;align-items:center;gap:1rem;z-index:100;
-      animation:fadeIn .2s ease;white-space:nowrap}
-    .undo-btn{background:var(--accent);color:#000;font-family:'Syne',sans-serif;
-      font-size:.65rem;font-weight:700;padding:.25rem .6rem;border:none;
-      cursor:pointer;margin-top:0;width:auto;text-transform:uppercase}
+.map-badge{position:absolute;top:10px;left:10px;z-index:400;background:rgba(7,9,13,.93);border:1px solid var(--border);border-radius:6px;padding:8px 12px;pointer-events:none}
+.mb-row{display:flex;align-items:center;gap:6px;font-family:var(--th);font-size:11px;color:var(--muted)}
+.mb-row+.mb-row{margin-top:3px}
+.mb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.locate-btn{position:absolute;bottom:12px;right:12px;z-index:400;width:38px;height:38px;border-radius:8px;background:rgba(7,9,13,.93);border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);transition:all .15s}
+.locate-btn:hover{color:var(--amber);border-color:var(--amber)}
 
-    /* PAGINATION */
-    .pagination{display:flex;justify-content:center;gap:.5rem;margin-top:1rem}
-    .page-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
-      font-family:'Space Mono',monospace;font-size:.65rem;padding:.4rem .75rem;
-      cursor:pointer;width:auto;margin-top:0;transition:all .15s}
-    .page-btn:hover,.page-btn.active{border-color:var(--accent);color:var(--accent);background:transparent}
-    .page-btn:disabled{opacity:.3;cursor:not-allowed}
+/* ── BOTTOM SHEET ── */
+.bsheet{flex-shrink:0;height:195px;display:flex;flex-direction:column;background:rgba(7,9,13,.98);border-top:1px solid var(--border-hi);z-index:30}
+.sbar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 6px;border-bottom:1px solid var(--border);flex-shrink:0;cursor:pointer}
+.shandle{width:30px;height:3px;background:var(--border-hi);border-radius:2px}
+.stitle{font-family:var(--th);font-size:12px;font-weight:700;color:var(--muted)}
+.live-badge{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;color:var(--green)}
+.live-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 1.2s infinite}
+.slist{flex:1;overflow-y:auto;padding:5px 10px calc(5px + var(--safe-b));scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.slist::-webkit-scrollbar{width:2px}
+.slist::-webkit-scrollbar-thumb{background:var(--border)}
 
-    /* MISC */
-    .footer{margin-top:2rem;text-align:center;color:var(--muted);font-size:.65rem;letter-spacing:.1em}
-    .rate-notice{font-size:.65rem;color:var(--muted);margin-top:.75rem;text-align:center}
-    .spinner{display:inline-block;width:12px;height:12px;border:2px solid #000;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
-    .spinner-muted{display:inline-block;width:10px;height:10px;border:2px solid var(--muted);border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+/* ── STATION CARD ── */
+.s-card{display:flex;align-items:flex-start;gap:9px;padding:8px 10px;border-radius:7px;margin-bottom:5px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;transition:all .13s;animation:slideIn .2s ease both}
+@keyframes slideIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.s-card:hover{border-color:var(--border-hi);background:var(--bg3)}
+.s-card.sel{border-color:var(--amber);background:rgba(255,184,0,.04)}
+.sbar2{width:3px;align-self:stretch;border-radius:2px;flex-shrink:0}
+.sbar2.available{background:var(--green);box-shadow:0 0 6px rgba(0,255,136,.45)}
+.sbar2.partial{background:var(--amber);box-shadow:0 0 6px rgba(255,184,0,.45)}
+.sbar2.out{background:var(--red);box-shadow:0 0 6px rgba(255,59,92,.45)}
+.sinfo{flex:1;min-width:0}
+.sname{font-family:var(--th);font-size:13px;font-weight:700;color:var(--text);line-height:1.2}
+.srow{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
+.stag{font-family:var(--th);font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;border:1px solid}
+.stag.available{color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.07)}
+.stag.partial{color:var(--amber);border-color:rgba(255,184,0,.3);background:rgba(255,184,0,.07)}
+.stag.out{color:var(--red);border-color:rgba(255,59,92,.3);background:rgba(255,59,92,.07)}
+.stime{font-size:10px;color:var(--muted)}
+.sfuels{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap}
+.fpill{font-family:var(--mono);font-size:8px;padding:1px 4px;border-radius:2px}
+.fpill.ok{background:rgba(0,255,136,.08);color:var(--green)}
+.fpill.no{background:rgba(255,59,92,.05);color:rgba(255,59,92,.35);text-decoration:line-through}
+.sright{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.trust{display:flex;flex-direction:column;align-items:center;font-family:var(--mono)}
+.trust-n{font-size:17px;font-weight:bold;line-height:1}
+.trust-n.hi{color:var(--green);text-shadow:0 0 8px rgba(0,255,136,.35)}
+.trust-n.md{color:var(--amber)}
+.trust-n.lo{color:var(--muted)}
+.trust-l{font-size:7px;color:var(--muted);letter-spacing:1px}
+.cbtn{padding:3px 8px;border-radius:3px;border:1px solid rgba(0,255,136,.3);background:rgba(0,255,136,.05);color:var(--green);font-family:var(--th);font-size:10px;font-weight:700;cursor:pointer;transition:all .13s}
+.cbtn:hover{background:rgba(0,255,136,.14)}
+.cbtn.done{border-color:var(--green);background:rgba(0,255,136,.18);cursor:default}
 
-    /* REDIRECT */
-    .redirect-screen{text-align:center;padding-top:30vh}
-    .redirect-screen .logo{margin-bottom:2rem}
-    .redirect-message{color:var(--muted);font-size:.8rem;margin-bottom:1rem;letter-spacing:.05em}
-    .redirect-domain{color:var(--accent);font-size:1rem;font-family:'Syne',sans-serif;font-weight:700;margin:.75rem 0 .25rem}
-    .redirect-sub{color:var(--muted);font-size:.65rem;margin-bottom:1.5rem}
-    .progress-bar{width:100%;height:2px;background:var(--border);overflow:hidden}
-    .progress-fill{height:100%;background:var(--accent);animation:progress 2s linear forwards}
-    .skip-btn{margin-top:1.5rem;background:transparent;border:1px solid var(--border);
-      color:var(--muted);font-family:'Space Mono',monospace;font-size:.7rem;
-      padding:.5rem 1rem;cursor:pointer;letter-spacing:.05em;width:auto}
-    .skip-btn:hover{border-color:var(--accent);color:var(--accent);background:transparent}
-    .warn-badge{display:inline-block;background:#2a1500;border:1px solid #5a3000;
-      color:var(--warn);font-size:.6rem;padding:.2rem .5rem;letter-spacing:.08em;
-      text-transform:uppercase;margin-bottom:1rem}
+/* ── FAB ── */
+.fab{position:fixed;bottom:calc(16px + var(--safe-b));right:14px;z-index:60;width:52px;height:52px;border-radius:50%;background:var(--amber);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 22px rgba(255,184,0,.45),0 3px 12px rgba(0,0,0,.6);transition:all .18s}
+.fab:hover{transform:scale(1.08);box-shadow:0 0 32px rgba(255,184,0,.6),0 3px 16px rgba(0,0,0,.6)}
+.fab:active{transform:scale(.95)}
 
-    @keyframes spin{to{transform:rotate(360deg)}}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-    @keyframes progress{from{width:0}to{width:100%}}
-  </style>
+/* ── MODAL ── */
+.backdrop{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.82);display:flex;align-items:flex-end;animation:fadeIn .18s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{width:100%;background:var(--bg3);border:1px solid var(--border-hi);border-bottom:none;border-radius:16px 16px 0 0;padding:16px 16px calc(24px + var(--safe-b));animation:slideUp .22s ease;max-height:92vh;overflow-y:auto}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mhandle{width:30px;height:3px;background:var(--border-hi);border-radius:2px;margin:0 auto 14px}
+.mtitle{font-size:20px;font-weight:800;color:var(--amber);margin-bottom:2px}
+.msub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.mlbl{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;margin-top:14px}
+.selinp{width:100%;padding:10px 12px;border-radius:6px;background:var(--bg2);border:1px solid var(--border-hi);color:var(--text);font-family:var(--th);font-size:13px;appearance:none}
+.selinp option{background:var(--bg2)}
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.acard{padding:12px;border-radius:8px;border:1.5px solid;background:transparent;cursor:pointer;transition:all .13s;text-align:left}
+.acard .aico{font-size:22px;display:block;margin-bottom:4px}
+.acard .albl{font-size:14px;font-weight:700;display:block}
+.acard .asub{font-size:10px;color:rgba(255,255,255,.35)}
+.acard.avail{border-color:rgba(0,255,136,.22);color:var(--green)}
+.acard.avail.on,.acard.avail:hover{background:rgba(0,255,136,.1);border-color:var(--green)}
+.acard.nostock{border-color:rgba(255,59,92,.22);color:var(--red)}
+.acard.nostock.on,.acard.nostock:hover{background:rgba(255,59,92,.1);border-color:var(--red)}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.fbtn{padding:8px 4px;border-radius:5px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);font-family:var(--th);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .12s}
+.fbtn.on{border-color:var(--amber);color:var(--amber);background:rgba(255,184,0,.08)}
+.subbtn{width:100%;padding:13px;margin-top:14px;border-radius:8px;background:var(--amber);border:none;color:#000;font-family:var(--th);font-size:16px;font-weight:800;cursor:pointer;transition:all .13s}
+.subbtn:disabled{background:#1a2030;color:var(--muted);cursor:not-allowed}
+.subbtn:not(:disabled):hover{background:#ffc929}
+
+/* ── TREND ── */
+.tpanel{position:fixed;inset:0;z-index:150;background:rgba(7,9,13,.97);display:flex;flex-direction:column;animation:fadeIn .18s ease}
+.tphdr{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.tptitle{font-size:20px;font-weight:800;color:var(--amber)}
+.tpsub{font-size:11px;color:var(--muted)}
+.closebtn{padding:6px 12px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--th);font-size:12px;cursor:pointer;transition:all .13s}
+.closebtn:hover{border-color:var(--border-hi);color:var(--text)}
+.tpbody{flex:1;overflow-y:auto;padding:12px}
+.zcard{margin-bottom:10px;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2)}
+.ztop{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.zname{font-size:16px;font-weight:700}
+.zbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px;border:1px solid}
+.zbadge.critical{color:var(--red);border-color:rgba(255,59,92,.3);background:rgba(255,59,92,.07)}
+.zbadge.warning{color:var(--amber);border-color:rgba(255,184,0,.3);background:rgba(255,184,0,.06)}
+.zbadge.ok{color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.05)}
+.ztrack{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:5px}
+.zfill{height:100%;border-radius:3px;transition:width 1.2s ease}
+.zfill.r{background:linear-gradient(90deg,#8a1122,var(--red))}
+.zfill.a{background:linear-gradient(90deg,#8a6200,var(--amber))}
+.zfill.g{background:linear-gradient(90deg,#008a48,var(--green))}
+.zmeta{font-size:10px;color:var(--muted);display:flex;gap:14px}
+.zmeta em{color:var(--text);font-style:normal}
+.znote{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}
+
+/* ── USER MENU ── */
+.umenu{position:fixed;top:48px;right:10px;z-index:300;background:var(--bg3);border:1px solid var(--border-hi);border-radius:10px;padding:12px;min-width:185px;animation:fadeIn .14s ease;box-shadow:0 8px 28px rgba(0,0,0,.7)}
+.umname{font-size:15px;font-weight:700;color:var(--text)}
+.umemail{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px;margin-bottom:9px}
+.umstat{font-size:11px;color:var(--muted);padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--border);line-height:2}
+.umstat em{color:var(--amber);font-style:normal}
+.umso{width:100%;padding:8px;border-radius:5px;border:1px solid rgba(255,59,92,.3);background:transparent;color:var(--red);font-family:var(--th);font-size:13px;font-weight:700;cursor:pointer;transition:all .13s}
+.umso:hover{background:rgba(255,59,92,.1)}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9990;padding:8px 16px;border-radius:8px;border:1px solid var(--amber);background:rgba(7,9,13,.97);font-family:var(--th);font-size:12px;font-weight:600;color:var(--amber);display:flex;align-items:center;gap:7px;box-shadow:0 0 18px rgba(255,184,0,.2),0 4px 14px rgba(0,0,0,.6);animation:toastIn .22s ease,toastOut .25s ease 2.5s forwards;white-space:nowrap;max-width:calc(100vw - 24px)}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes toastOut{to{opacity:0}}
+</style>
 </head>
 <body>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
-
-<script>
-'use strict';
-// ══════════════════════════════════════════════════════
-//  ① CONFIG
-// ══════════════════════════════════════════════════════
-const CFG = {
-  // Get your sitekey free at dash.cloudflare.com/turnstile
-  // Set to null to disable CAPTCHA (not recommended in prod)
-  TURNSTILE_SITEKEY: '0x4AAAAAACsw8JXpUGmm_413',
-  MAX_LINKS_PER_USER: 50,
-  PAGE_SIZE: 10,
-  RATE_WINDOW_MS: 10 * 60 * 1000,  // 10 min
-  RATE_MAX: 5,
-};
-
-const RESERVED_SLUGS = new Set([
-  'admin','api','app','auth','blog','cdn','dashboard','delete',
-  'edit','help','home','index','login','logout','manage','me',
-  'new','null','undefined','privacy','settings','signin','signup',
-  'static','support','terms','undefined','user','users','www',
-]);
-
-// ⑧ Known malicious / tracking / phishing domains
-// Note: this is a best-effort list — determined attackers use new domains.
-// Real protection = Firebase rules + rate limiting + CAPTCHA layered together.
-const BLOCKED_DOMAINS = [
-  // IP loggers
-  'grabify.link','iplogger.org','blasze.tk','2no.co','iplis.ru',
-  'yip.su','ps3cfw.com','lovebird.guru','yourfreetun.net',
-  // Shortener chains (no chaining)
-  'bit.ly','tinyurl.com','t.co','ow.ly','rb.gy','is.gd','v.gd',
-  'buff.ly','short.io','cutt.ly','tiny.cc',
-  // Common phishing templates
-  'discord.gift','discordnitro.gift','steampowered.gift',
-  'steamcommunity.gift','free-nitro.ru',
-];
-
-// ⑧b Block suspicious TLD patterns (regex checked against full hostname)
-const BLOCKED_PATTERNS = [
-  /\.tk$/,/\.ml$/,/\.ga$/,/\.cf$/,  // free TLDs heavily abused
-  /free.?nitro/i, /discord.?gift/i, /steam.?gift/i,
-];
-
-// ══════════════════════════════════════════════════════
-//  ② FIREBASE INIT
-// ══════════════════════════════════════════════════════
-firebase.initializeApp({
-  apiKey: "AIzaSyAKSjJqA-EaJ3cd2ay35luqlM9ABhhf5So",
-  authDomain: "drkexternal.firebaseapp.com",
-  projectId: "drkexternal",
-  storageBucket: "drkexternal.firebasestorage.app",
-  messagingSenderId: "489484482755",
-  appId: "1:489484482755:web:1a9c297d2fd87c20cf4a76",
-  measurementId: "G-0W5HFRHRFQ",
-  databaseURL: "https://drkexternal-default-rtdb.asia-southeast1.firebasedatabase.app"
-});
-
-// ── App Check — locks Firebase to requests from drk.qzz.io only ──
-const appCheck = firebase.appCheck();
-appCheck.activate(
-  new firebase.appCheck.ReCaptchaV3Provider('6LcHtI8sAAAAAM6JqC1j8LCegHFQXy5NXv_DE9Td'),
-  true // auto-refresh tokens silently
-);
-const db   = firebase.database();
-const auth = firebase.auth();
-const googleProvider = new firebase.auth.GoogleAuthProvider();
-let currentUser = null;
-
-// ══════════════════════════════════════════════════════
-//  ③ RETRY HELPER — exponential backoff
-// ══════════════════════════════════════════════════════
-async function withRetry(fn, retries = 3, delay = 500) {
-  for (let i = 0; i < retries; i++) {
-    try { return await fn(); }
-    catch (err) {
-      if (i === retries - 1) throw err;
-      await new Promise(r => setTimeout(r, delay * Math.pow(2, i)));
-    }
-  }
-}
-
-// ══════════════════════════════════════════════════════
-//  ④ SERVER-SIDE RATE LIMIT (Firebase node per user/session)
-// ══════════════════════════════════════════════════════
-function getRateLimitKey() {
-  // For auth'd users use UID; for guests use a session ID stored in sessionStorage
-  if (currentUser) return 'u_' + currentUser.uid;
-  let sid = sessionStorage.getItem('_sid');
-  if (!sid) { sid = Math.random().toString(36).slice(2); sessionStorage.setItem('_sid', sid); }
-  return 'g_' + sid;
-}
-
-async function checkServerRateLimit() {
-  const key = getRateLimitKey();
-  const ref = db.ref('ratelimit/' + key);
-  const now = Date.now();
-  let blocked = false;
-  let waitMin = 0;
-
-  await ref.transaction(data => {
-    if (!data) return { count: 0, since: now };
-    if (now - data.since > CFG.RATE_WINDOW_MS) return { count: 0, since: now };
-    if (data.count >= CFG.RATE_MAX) {
-      blocked = true;
-      waitMin = Math.ceil((CFG.RATE_WINDOW_MS - (now - data.since)) / 60000);
-      return; // abort transaction
-    }
-    return { ...data, count: data.count + 1 };
-  });
-
-  if (blocked) throw new Error(`Rate limit: try again in ~${waitMin} min.`);
-}
-
-// ══════════════════════════════════════════════════════
-//  ⑤ CAPTCHA
-// ══════════════════════════════════════════════════════
-let _captchaToken = null;
-
-function initCaptcha() {
-  if (!CFG.TURNSTILE_SITEKEY) return;
-  if (typeof turnstile === 'undefined') return;
-  const wrap = document.getElementById('captchaWrap');
-  if (!wrap || wrap.dataset.init) return;
-  wrap.dataset.init = '1';
-  turnstile.render(wrap, {
-    sitekey: CFG.TURNSTILE_SITEKEY,
-    theme: 'dark',
-    callback: token => { _captchaToken = token; },
-    'expired-callback': () => { _captchaToken = null; },
-    'error-callback': () => { _captchaToken = null; },
-    'timeout-callback': () => { _captchaToken = null; },
-  });
-}
-
-function resetCaptcha() {
-  _captchaToken = null;
-  if (typeof turnstile !== 'undefined') {
-    const wrap = document.getElementById('captchaWrap');
-    if (wrap) turnstile.reset(wrap);
-  }
-}
-
-// ══════════════════════════════════════════════════════
-//  ⑥ ROUTING
-// ══════════════════════════════════════════════════════
-const _p = new URLSearchParams(window.location.search);
-const _slugParam = _p.get('r') || '';
-const _pathSlug  = window.location.pathname.replace(/^\//, '').split('/')[0];
-const activeSlug = _slugParam || (_pathSlug && _pathSlug !== 'index.html' ? _pathSlug : '');
-
-window.addEventListener('DOMContentLoaded', () => {
-  if (activeSlug) { showRedirectScreen(activeSlug); return; }
-  document.getElementById('navbar').style.display = 'flex';
-  document.getElementById('app').style.display = 'block';
-  document.getElementById('origin-prefix').textContent = window.location.origin + '/?r=';
-
-  // Init Turnstile after a tick (script may still be loading)
-  setTimeout(initCaptcha, 800);
-
-  auth.onAuthStateChanged(handleAuthChange);
-});
-
-// ══════════════════════════════════════════════════════
-//  ⑦ AUTH
-// ══════════════════════════════════════════════════════
-function handleAuthChange(user) {
-  currentUser = user;
-  const avatar     = document.getElementById('navAvatar');
-  const name       = document.getElementById('navName');
-  const signInBtn  = document.getElementById('navSignIn');
-  const signOutBtn = document.getElementById('navSignOut');
-  const loginPrompt = document.getElementById('loginPrompt');
-  const dashboard   = document.getElementById('dashboard');
-
-  if (user) {
-    if (user.photoURL) { avatar.src = user.photoURL; avatar.style.display = 'block'; }
-    name.textContent = user.displayName || user.email;
-    name.style.display = 'block';
-    signInBtn.style.display = 'none';
-    signOutBtn.style.display = 'flex';
-    loginPrompt.style.display = 'none';
-    loadUserLinks(user.uid, 1);
-  } else {
-    avatar.style.display = 'none';
-    name.style.display = 'none';
-    signInBtn.style.display = 'flex';
-    signOutBtn.style.display = 'none';
-    loginPrompt.style.display = 'block';
-    dashboard.style.display = 'none';
-  }
-}
-
-function signInWithGoogle() {
-  auth.signInWithPopup(googleProvider).catch(err => {
-    showResult('error', 'Sign-in failed: ' + err.message);
-  });
-}
-function signOut() {
-  // ⑤ Clean up listener before signing out
-  if (_linksListenerRef) { _linksListenerRef.off('value'); _linksListenerRef = null; }
-  auth.signOut();
-}
-
-// ══════════════════════════════════════════════════════
-//  ⑧ VALIDATION
-// ══════════════════════════════════════════════════════
-function validateUrl(url) {
-  if (!url.startsWith('https://')) return 'Only HTTPS URLs are allowed.';
-  let p; try { p = new URL(url); } catch { return 'Invalid URL format.'; }
-  const h = p.hostname.toLowerCase();
-  if (!h.includes('.') || h === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(h)) return 'Invalid domain.';
-  for (const b of BLOCKED_DOMAINS) if (h === b || h.endsWith('.' + b)) return `Domain "${h}" is blocked.`;
-  for (const pat of BLOCKED_PATTERNS) if (pat.test(h)) return `Domain "${h}" matches a blocked pattern.`;
-  if (url.length > 2000) return 'URL too long.';
-  return null;
-}
-
-function genSlug(n = 8) {
-  const c = 'abcdefghijkmnpqrstuvwxyz23456789';
-  return Array.from({ length: n }, () => c[Math.floor(Math.random() * c.length)]).join('');
-}
-function cleanSlug(s) { return s.toLowerCase().replace(/[^a-z0-9\-_]/g, '').slice(0, 32); }
-
-// Simple non-crypto hash for URL dedup
-function hashUrl(url) {
-  let h = 0;
-  for (let i = 0; i < url.length; i++) { h = Math.imul(31, h) + url.charCodeAt(i) | 0; }
-  return Math.abs(h).toString(36);
-}
-
-// ══════════════════════════════════════════════════════
-//  ⑨ CREATE LINK
-// ══════════════════════════════════════════════════════
-async function create() {
-  const longUrl  = document.getElementById('longUrl').value.trim();
-  const rawSlug  = document.getElementById('customSlug').value.trim();
-  const expiry   = document.getElementById('expiry').value;
-  const btn      = document.getElementById('createBtn');
-
-  // CAPTCHA check
-  if (CFG.TURNSTILE_SITEKEY) {
-    if (!_captchaToken) return showResult('error', 'Please complete the CAPTCHA.');
-  }
-
-  const urlErr = validateUrl(longUrl);
-  if (urlErr) { resetCaptcha(); return showResult('error', urlErr); }
-
-  const customSlug = cleanSlug(rawSlug);
-  if (rawSlug && customSlug !== rawSlug) { resetCaptcha(); return showResult('error', 'Slug: letters, numbers, hyphens, underscores only.'); }
-  if (customSlug && RESERVED_SLUGS.has(customSlug)) { resetCaptcha(); return showResult('error', `"${customSlug}" is a reserved word.`); }
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Shortening...';
-
-  try {
-    // Server-side rate limit check (writes to Firebase ratelimit node)
-    await withRetry(() => checkServerRateLimit());
-
-    // Per-user quota check
-    if (currentUser) {
-      const countSnap = await withRetry(() => db.ref(`users/${currentUser.uid}/links`).once('value'));
-      if (countSnap.numChildren() >= CFG.MAX_LINKS_PER_USER) {
-        throw new Error(`You've reached the ${CFG.MAX_LINKS_PER_USER}-link limit. Delete some links to continue.`);
-      }
-
-      // Duplicate URL check — same URL already shortened by this user?
-      const urlHash = hashUrl(longUrl);
-      const dupSnap = await withRetry(() => db.ref(`users/${currentUser.uid}/hashes/${urlHash}`).once('value'));
-      if (dupSnap.exists()) {
-        const existingSlug = dupSnap.val();
-        const existingLink = window.location.origin + '/?r=' + existingSlug;
-        btn.disabled = false; btn.textContent = 'Shorten URL';
-        showResult('success', existingLink, existingSlug, null);
-        document.getElementById('result').insertAdjacentHTML('beforeend',
-          `<div class="dup-notice">⚡ You already shortened this URL — reusing existing link.</div>`);
-        resetCaptcha();
-        return;
-      }
-    }
-
-    // Find/validate slug
-    let finalSlug = customSlug;
-    if (finalSlug) {
-      if (RESERVED_SLUGS.has(finalSlug)) throw new Error(`"${finalSlug}" is reserved.`);
-      const ex = await withRetry(() => db.ref('links/' + finalSlug).once('value'));
-      if (ex.exists()) throw new Error(`"/${finalSlug}" is already taken.`);
-    } else {
-      for (let i = 0; i < 8; i++) {
-        const c = genSlug(8);
-        if (RESERVED_SLUGS.has(c)) continue;
-        const ex = await withRetry(() => db.ref('links/' + c).once('value'));
-        if (!ex.exists()) { finalSlug = c; break; }
-      }
-      if (!finalSlug) throw new Error('Could not generate unique slug. Try again.');
-    }
-
-    const expiryMap = { '1h': 36e5, '24h': 864e5, '7d': 6048e5, '30d': 2592e6 };
-    const expiresAt = expiry === 'never' ? null : Date.now() + (expiryMap[expiry] || 0);
-
-    const payload = {
-      url: longUrl, created: Date.now(), clicks: 0,
-      ...(expiresAt && { expiresAt }),
-      ...(currentUser && { uid: currentUser.uid }),
-    };
-
-    await withRetry(() => db.ref('links/' + finalSlug).set(payload));
-
-    if (currentUser) {
-      const urlHash = hashUrl(longUrl);
-      await withRetry(() => Promise.all([
-        db.ref(`users/${currentUser.uid}/links/${finalSlug}`).set({
-          url: longUrl, created: Date.now(), clicks: 0, ...(expiresAt && { expiresAt })
-        }),
-        db.ref(`users/${currentUser.uid}/hashes/${urlHash}`).set(finalSlug),
-      ]));
-      loadUserLinks(currentUser.uid, 1);
-    }
-
-    const shortLink = window.location.origin + '/?r=' + finalSlug;
-    showResult('success', shortLink, finalSlug, expiresAt);
-    document.getElementById('longUrl').value = '';
-    document.getElementById('customSlug').value = '';
-    resetCaptcha();
-  } catch (e) {
-    showResult('error', e.message);
-    resetCaptcha();
-  }
-
-  btn.disabled = false; btn.textContent = 'Shorten URL';
-}
-
-// ══════════════════════════════════════════════════════
-//  ⑩ RESULT
-// ══════════════════════════════════════════════════════
-function showResult(type, msg, slug, expiresAt) {
-  const r = document.getElementById('result');
-  r.className = 'result show ' + type;
-  if (type === 'success') {
-    r.dataset.link = msg;
-    r.innerHTML = `
-      <div class="result-label">Your short link</div>
-      <div class="result-link">
-        <span>${esc(msg)}</span>
-        <button class="copy-btn" id="copyBtn" onclick="copyLink()">Copy</button>
-      </div>
-      <div class="result-meta">
-        <div class="meta-item">Clicks <span>0</span></div>
-        <div class="meta-item">Slug <span>/${esc(slug)}</span></div>
-        <div class="meta-item">Expires <span>${expiresAt ? new Date(expiresAt).toLocaleDateString() : 'Never'}</span></div>
-      </div>`;
-  } else {
-    r.innerHTML = `<div class="result-label">Error</div><div style="font-size:.8rem;margin-top:.25rem">${esc(msg)}</div>`;
-  }
-}
-
-// ══════════════════════════════════════════════════════
-//  ⑪ DASHBOARD — paginated, real-time
-// ══════════════════════════════════════════════════════
-let _allLinks = [];
-let _currentPage = 1;
-
-let _linksListenerRef = null;
-
-function loadUserLinks(uid, page = 1) {
-  const dash = document.getElementById('dashboard');
-  dash.style.display = 'block';
-  document.getElementById('linkList').innerHTML = '<div class="dash-empty"><span class="spinner-muted"></span></div>';
-
-  // ⑤ Detach previous listener to prevent stacking on login/logout cycles
-  if (_linksListenerRef) {
-    _linksListenerRef.off('value');
-    _linksListenerRef = null;
-  }
-
-  _linksListenerRef = db.ref(`users/${uid}/links`).orderByChild('created');
-  _linksListenerRef.on('value', snap => {
-    _allLinks = [];
-    snap.forEach(child => _allLinks.unshift({ slug: child.key, ...child.val() }));
-    _currentPage = page;
-    renderDashboard(uid);
-  });
-}
-
-function renderDashboard(uid) {
-  const total = _allLinks.length;
-  const usedPct = Math.round((total / CFG.MAX_LINKS_PER_USER) * 100);
-  const fillClass = usedPct >= 90 ? 'danger' : usedPct >= 70 ? 'warn' : '';
-
-  document.getElementById('dashMeta').innerHTML = `
-    ${total} / ${CFG.MAX_LINKS_PER_USER} links
-    <span class="quota-bar"><span class="quota-fill ${fillClass}" style="width:${usedPct}%"></span></span>`;
-
-  const totalPages = Math.max(1, Math.ceil(total / CFG.PAGE_SIZE));
-  if (_currentPage > totalPages) _currentPage = totalPages;
-
-  const start = (_currentPage - 1) * CFG.PAGE_SIZE;
-  const pageItems = _allLinks.slice(start, start + CFG.PAGE_SIZE);
-
-  const list = document.getElementById('linkList');
-  if (!_allLinks.length) {
-    list.innerHTML = '<div class="dash-empty">No links yet. Create your first one above!</div>';
-    document.getElementById('pagination').innerHTML = '';
-    return;
-  }
-
-  // Auto-delete expired links from user's view
-  const now = Date.now();
-  pageItems.forEach(item => {
-    if (item.expiresAt && now > item.expiresAt) {
-      db.ref(`users/${uid}/links/${item.slug}`).remove().catch(() => {});
-    }
-  });
-
-  list.innerHTML = pageItems
-    .filter(item => !item.expiresAt || now <= item.expiresAt)
-    .map(item => `
-      <div class="link-item" id="item-${esc(item.slug)}">
-        <div class="link-item-info">
-          <div class="link-item-short">${window.location.origin}/?r=${esc(item.slug)}</div>
-          <div class="link-item-dest" title="${esc(item.url)}">${esc(item.url)}</div>
-          <div class="link-item-meta">
-            <span>${item.clicks || 0}</span> clicks ·
-            ${item.expiresAt ? 'Expires ' + new Date(item.expiresAt).toLocaleDateString() : 'No expiry'}
-          </div>
-        </div>
-        <div class="link-actions">
-          <button class="action-btn" onclick="copyDirect('${esc(window.location.origin + '/?r=' + item.slug)}', this)">Copy</button>
-          <button class="action-btn del" onclick="deleteLink('${esc(item.slug)}', '${esc(item.url)}')">Del</button>
-        </div>
-      </div>`).join('');
-
-  // Pagination controls
-  const pg = document.getElementById('pagination');
-  if (totalPages <= 1) { pg.innerHTML = ''; return; }
-  let btns = '';
-  for (let i = 1; i <= totalPages; i++) {
-    btns += `<button class="page-btn${i === _currentPage ? ' active' : ''}" onclick="goPage(${i})">${i}</button>`;
-  }
-  pg.innerHTML = `
-    <button class="page-btn" onclick="goPage(${_currentPage - 1})" ${_currentPage === 1 ? 'disabled' : ''}>←</button>
-    ${btns}
-    <button class="page-btn" onclick="goPage(${_currentPage + 1})" ${_currentPage === totalPages ? 'disabled' : ''}>→</button>`;
-}
-
-function goPage(p) {
-  _currentPage = p;
-  if (currentUser) renderDashboard(currentUser.uid);
-}
-
-// ══════════════════════════════════════════════════════
-//  ⑫ DELETE with undo toast + retry
-// ══════════════════════════════════════════════════════
-let _undoTimer = null;
-let _pendingDelete = null;
-
-async function deleteLink(slug, url) {
-  if (!currentUser) return;
-
-  // Optimistic UI: mark as deleting immediately
-  const el = document.getElementById('item-' + slug);
-  if (el) el.classList.add('deleting');
-
-  // Cancel any previous pending delete first
-  if (_pendingDelete) {
-    await commitDelete(_pendingDelete.slug, _pendingDelete.url, _pendingDelete.uid);
-  }
-
-  _pendingDelete = { slug, url, uid: currentUser.uid };
-
-  // Show undo toast
-  showUndoToast(slug, () => {
-    // Undo: restore element
-    const el2 = document.getElementById('item-' + slug);
-    if (el2) el2.classList.remove('deleting');
-    _pendingDelete = null;
-  });
-}
-
-async function commitDelete(slug, url, uid) {
-  try {
-    const urlHash = hashUrl(url);
-    await withRetry(() => Promise.all([
-      db.ref('links/' + slug).remove(),
-      db.ref(`users/${uid}/links/${slug}`).remove(),
-      db.ref(`users/${uid}/hashes/${urlHash}`).remove(),
-    ]));
-  } catch (e) {
-    // Restore on failure
-    const el = document.getElementById('item-' + slug);
-    if (el) { el.classList.remove('deleting'); showToast('Delete failed. Try again.'); }
-  }
-}
-
-function showUndoToast(slug, onUndo) {
-  // Remove existing toast
-  document.querySelectorAll('.undo-toast').forEach(t => t.remove());
-  clearTimeout(_undoTimer);
-
-  const toast = document.createElement('div');
-  toast.className = 'undo-toast';
-  toast.innerHTML = `Link deleted <button class="undo-btn" id="undoBtnToast">Undo</button>`;
-  document.body.appendChild(toast);
-
-  document.getElementById('undoBtnToast').onclick = () => {
-    clearTimeout(_undoTimer);
-    toast.remove();
-    onUndo();
-    _pendingDelete = null;
-  };
-
-  _undoTimer = setTimeout(async () => {
-    toast.remove();
-    if (_pendingDelete && _pendingDelete.slug === slug) {
-      await commitDelete(_pendingDelete.slug, _pendingDelete.url, _pendingDelete.uid);
-      _pendingDelete = null;
-    }
-  }, 5000);
-}
-
-function showToast(msg) {
-  const t = document.createElement('div');
-  t.className = 'undo-toast'; t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
-}
-
-// ══════════════════════════════════════════════════════
-//  ⑬ COPY
-// ══════════════════════════════════════════════════════
-function copyLink() {
-  const link = document.getElementById('result').dataset.link; if (!link) return;
-  navigator.clipboard.writeText(link).then(() => {
-    const b = document.getElementById('copyBtn'); if (b) { b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy', 2000); }
-  }).catch(() => {
-    const ta = document.createElement('textarea'); ta.value = link; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    const b = document.getElementById('copyBtn'); if (b) { b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy', 2000); }
-  });
-}
-
-function copyDirect(link, btn) {
-  navigator.clipboard.writeText(link).then(() => { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 2000); });
-}
-
-// ══════════════════════════════════════════════════════
-//  ⑭ REDIRECT SCREEN — shows domain only, not full URL
-// ══════════════════════════════════════════════════════
-let _dest = null;
-function showRedirectScreen(slug) {
-  document.body.innerHTML = `
-    <div class="container redirect-screen" style="z-index:1;position:relative;">
-      <div class="logo">drk<span>.</span>link</div>
-      <p class="redirect-message">Resolving link...</p>
-      <div class="progress-bar"><div class="progress-fill" id="pbar"></div></div>
-      <button class="skip-btn" id="skipBtn" style="display:none" onclick="window.location.href=_dest">Skip →</button>
-    </div>`;
-
-  db.ref('links/' + slug).once('value').then(snap => {
-    if (!snap.exists()) {
-      document.querySelector('.redirect-message').textContent = '404 — Link not found.';
-      document.querySelector('.redirect-message').style.color = 'var(--error)';
-      document.getElementById('pbar').style.background = 'var(--error)';
-      setTimeout(() => window.location.href = '/', 2500); return;
-    }
-    const data = snap.val();
-    if (data.expiresAt && Date.now() > data.expiresAt) {
-      // ④ Clean up BOTH nodes when expired
-      Promise.all([
-        db.ref('links/' + slug).remove(),
-        data.uid ? db.ref(`users/${data.uid}/links/${slug}`).remove() : Promise.resolve(),
-        data.uid ? db.ref(`users/${data.uid}/hashes/${hashUrl(data.url||'')}`).remove() : Promise.resolve(),
-      ]).catch(() => {});
-      document.querySelector('.redirect-message').textContent = 'This link has expired.';
-      document.querySelector('.redirect-message').style.color = 'var(--warn)';
-      setTimeout(() => window.location.href = '/', 2500); return;
-    }
-
-    _dest = data.url;
-    let domain = '';
-    try { domain = new URL(_dest).hostname; } catch { domain = _dest; }
-
-    // ── Click tracking — best-effort without a backend ──────────────────
-    // Layer 1: sessionStorage  → one count per browser tab session per slug
-    // Layer 2: localStorage    → one count per 24 hrs per slug per device
-    // Layer 3: Firebase rule   → write only allowed if newVal === oldVal + 1
-    // What this stops: accidental double-counts, casual abuse, page refreshes
-    // What this doesn't stop: determined attacker with DevTools (needs backend)
-    const sessKey = 'ck_s_' + slug;
-    const lsKey   = 'ck_l_' + slug;
-    const lsData  = (() => { try { return JSON.parse(localStorage.getItem(lsKey)||'{}'); } catch { return {}; } })();
-    const alreadyThisSession = sessionStorage.getItem(sessKey);
-    const alreadyToday = lsData.t && (Date.now() - lsData.t) < 86400000;
-
-    if (!alreadyThisSession && !alreadyToday) {
-      sessionStorage.setItem(sessKey, '1');
-      localStorage.setItem(lsKey, JSON.stringify({ t: Date.now() }));
-      db.ref('links/' + slug + '/clicks').transaction(c => (c || 0) + 1);
-      if (data.uid) db.ref(`users/${data.uid}/links/${slug}/clicks`).transaction(c => (c || 0) + 1);
-    }
-
-    document.querySelector('.redirect-message').textContent = 'You are being redirected to:';
-    document.querySelector('.redirect-screen').insertAdjacentHTML('beforeend', `
-      <div class="warn-badge">⚠ verify before proceeding</div>
-      <div class="redirect-domain">${esc(domain)}</div>
-      <div class="redirect-sub">via drk.link short URL</div>
-    `);
-    document.getElementById('skipBtn').style.display = 'inline-block';
-    setTimeout(() => window.location.href = _dest, 2000);
-  }).catch(() => {
-    document.querySelector('.redirect-message').textContent = 'Connection error. Retrying...';
-    // Retry once after 2 seconds
-    setTimeout(() => window.location.reload(), 2000);
-  });
-}
-
-// ══════════════════════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════════════════════
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-// hashUrl is defined earlier but referenced here too — safe since JS hoists functions
-</script>
-
-<!-- ═══════════ HTML ═══════════ -->
-
-<nav class="navbar" id="navbar" style="display:none">
-  <div class="nav-logo">drk<span>.</span>link</div>
-  <div class="nav-right">
-    <img class="user-avatar" id="navAvatar" src="" alt=""/>
-    <span class="user-name" id="navName"></span>
-    <button class="sign-btn" id="navSignIn" onclick="signInWithGoogle()" style="display:none">
-      <svg width="13" height="13" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
-      Sign in
-    </button>
-    <button class="sign-btn" id="navSignOut" onclick="signOut()" style="display:none">Sign out</button>
-  </div>
-</nav>
-
-<div class="container" id="app" style="display:none">
-  <div class="logo">drk<span>.</span>link</div>
-  <p class="tagline">Minimal URL shortener</p>
-
-  <div class="card">
-    <div class="input-group">
-      <label for="longUrl">Destination URL (HTTPS only)</label>
-      <input type="url" id="longUrl" placeholder="https://your-long-url.com/goes/here" onkeydown="if(event.key==='Enter')create()"/>
-    </div>
-    <div class="row-two">
-      <div class="input-group">
-        <label for="customSlug">Custom slug (optional)</label>
-        <div class="slug-row">
-          <span class="slug-prefix" id="origin-prefix">…/?r=</span>
-          <input type="text" id="customSlug" placeholder="my-link" maxlength="32" onkeydown="if(event.key==='Enter')create()"/>
-        </div>
-      </div>
-      <div class="input-group">
-        <label for="expiry">Expires after</label>
-        <select id="expiry">
-          <option value="never">Never</option>
-          <option value="1h">1 Hour</option>
-          <option value="24h">24 Hours</option>
-          <option value="7d">7 Days</option>
-          <option value="30d">30 Days</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Cloudflare Turnstile CAPTCHA -->
-    <div class="captcha-wrap" id="captchaWrap"></div>
-
-    <button id="createBtn" onclick="create()">Shorten URL</button>
-    <p class="rate-notice">Max 5 links / 10 min · 50 links max per account</p>
-    <div class="result" id="result"></div>
-
-    <div class="login-prompt" id="loginPrompt">
-      <p>Sign in to save your links, track clicks,<br/>delete them, and avoid duplicates.</p>
-      <button class="google-btn" onclick="signInWithGoogle()">
-        <svg width="16" height="16" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
-        Continue with Google
-      </button>
-    </div>
-  </div>
-
-  <div class="dashboard" id="dashboard" style="display:none">
-    <div class="dash-header">
-      <span class="dash-title">Your links</span>
-      <span class="dash-meta" id="dashMeta"></span>
-    </div>
-    <div class="link-list" id="linkList"></div>
-    <div class="pagination" id="pagination"></div>
-  </div>
-
-  <p class="footer">Powered by Firebase + GitHub Pages</p>
+<!-- LOADING -->
+<div id="scr-loading">
+  <div class="spinner"></div>
+  <div class="load-txt">กำลังโหลด FUELRADAR...</div>
 </div>
 
+<!-- SIGN-IN -->
+<div id="scr-signin" class="hidden">
+  <div class="si-logo">FUEL<span>RADAR</span></div>
+  <div class="si-sub">เช็คน้ำมันแบบเรียลไทม์ · ข้อมูลจากชุมชน</div>
+  <div class="si-radar"><div class="si-sweep"></div><div class="si-dot"></div></div>
+  <button class="google-btn" id="btn-signin">
+    <svg width="20" height="20" viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </svg>
+    เข้าสู่ระบบด้วย Google
+  </button>
+  <div class="si-note">ข้อมูลของคุณปลอดภัย · รายงานเพื่อช่วยคนไทยทุกคน</div>
+  <div class="si-warn hidden" id="oauth-hint">
+    ⚠ ยังไม่ได้ตั้งค่า Google Client ID<br>
+    ไปที่ <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a><br>
+    → APIs & Services → Credentials → Create OAuth 2.0 Client ID
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="scr-main" class="hidden">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-wrap">
+      <svg class="logo-ring" width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="#FFB800" stroke-width="1.5" opacity=".22"/>
+        <circle cx="12" cy="12" r="6"  stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
+        <circle cx="12" cy="12" r="2.2" fill="#FFB800"/>
+        <line x1="12" y1="2"  x2="12" y2="5"  stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
+        <line x1="12" y1="19" x2="12" y2="22" stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
+        <line x1="2"  y1="12" x2="5"  y2="12" stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
+        <line x1="19" y1="12" x2="22" y2="12" stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
+      </svg>
+      <div>
+        <div class="logo-name">FUEL<span>RADAR</span></div>
+        <div class="logo-sub">ข้อมูลสดจากชุมชน</div>
+      </div>
+    </div>
+    <div class="h-right">
+      <button class="hbtn" id="btn-alert"><span class="pulse-dot"></span><span id="alert-lbl">แจ้งเตือน</span></button>
+      <button class="hbtn" id="btn-trend">📊 ภาพรวม</button>
+      <div class="avatar" id="btn-avatar"><span id="av-init">?</span></div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="fscroll">
+      <button class="chip" data-f="diesel">ดีเซล</button>
+      <button class="chip" data-f="e91">แก๊สโซฮอล์ 91</button>
+      <button class="chip" data-f="e95">แก๊สโซฮอล์ 95</button>
+      <button class="chip" data-f="e20">E20</button>
+      <button class="chip" data-f="e85">E85</button>
+      <button class="chip" data-f="lpg">LPG</button>
+      <button class="chip" data-f="available" style="border-color:rgba(0,255,136,.2);color:rgba(0,255,136,.6)">✓ มีน้ำมัน</button>
+      <button class="chip" data-f="out" style="border-color:rgba(255,59,92,.2);color:rgba(255,59,92,.6)">✕ หมด</button>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div id="map-wrap">
+    <div id="leaflet-map"></div>
+    <div class="map-badge">
+      <div class="mb-row"><div class="mb-dot" style="background:var(--green)"></div><span id="cnt-a">0</span>&nbsp;มีน้ำมัน</div>
+      <div class="mb-row"><div class="mb-dot" style="background:var(--amber)"></div><span id="cnt-p">0</span>&nbsp;มีบางชนิด</div>
+      <div class="mb-row"><div class="mb-dot" style="background:var(--red)"></div><span id="cnt-o">0</span>&nbsp;น้ำมันหมด</div>
+    </div>
+    <button class="locate-btn" id="btn-locate">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Bottom sheet -->
+  <div class="bsheet">
+    <div class="sbar">
+      <div class="shandle"></div>
+      <div class="stitle">ปั๊มใกล้คุณ · <span id="s-count">0</span> แห่ง</div>
+      <div class="live-badge">สด</div>
+    </div>
+    <div class="slist" id="slist"></div>
+  </div>
+
+</div><!-- /scr-main -->
+
+<!-- FAB always on top -->
+<button class="fab hidden" id="btn-fab">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+</button>
+
+<script>
+// ── CONFIG ───────────────────────────────
+const FB = {
+  apiKey:"AIzaSyAv__llreM9IMHGkSSd7sfLESK-C5f8dwk",
+  authDomain:"ltn-project-typing.firebaseapp.com",
+  projectId:"ltn-project-typing",
+  storageBucket:"ltn-project-typing.firebasestorage.app",
+  messagingSenderId:"577589727870",
+  appId:"1:577589727870:web:86695e39cfeec8150ebe2f"
+};
+const GOOGLE_CLIENT_ID = '847324239361-i8upcnl74ak6t8sh02vlgn3nsn9s7nnb.apps.googleusercontent.com';
+const CENTER=[13.7563,100.5018], ZOOM=14;
+
+// ── DATA ─────────────────────────────────
+const SEEDS=[
+  {id:'s1',name:'ปตท. พระราม 4',     brand:'PTT',     lat:13.7220,lng:100.5290,status:'available',fuels:{diesel:true, e91:true, e95:true, e20:false,e85:false,lpg:false},confirmCount:14,updatedMinAgo:3, zone:'สีลม'},
+  {id:'s2',name:'บางจาก อ่อนนุช',     brand:'BANGCHAK',lat:13.7020,lng:100.5990,status:'out',      fuels:{diesel:false,e91:false,e95:false,e20:false,e85:false,lpg:false},confirmCount:9, updatedMinAgo:8, zone:'อ่อนนุช'},
+  {id:'s3',name:'Shell สุขุมวิท 31',  brand:'SHELL',   lat:13.7340,lng:100.5680,status:'partial',  fuels:{diesel:true, e91:false,e95:false,e20:true, e85:false,lpg:false},confirmCount:6, updatedMinAgo:15,zone:'อโศก'},
+  {id:'s4',name:'PT ลาดพร้าว',        brand:'PT',      lat:13.7780,lng:100.5670,status:'available',fuels:{diesel:true, e91:true, e95:true, e20:true, e85:false,lpg:true },confirmCount:10,updatedMinAgo:2, zone:'ลาดพร้าว'},
+  {id:'s5',name:'Esso พระโขนง',       brand:'ESSO',    lat:13.7060,lng:100.6020,status:'out',      fuels:{diesel:false,e91:false,e95:false,e20:false,e85:false,lpg:false},confirmCount:18,updatedMinAgo:25,zone:'พระโขนง'},
+  {id:'s6',name:'Caltex ทองหล่อ',     brand:'CALTEX',  lat:13.7250,lng:100.5820,status:'partial',  fuels:{diesel:true, e91:false,e95:false,e20:false,e85:false,lpg:false},confirmCount:3, updatedMinAgo:42,zone:'ทองหล่อ'},
+  {id:'s7',name:'ปตท. อโศก',          brand:'PTT',     lat:13.7380,lng:100.5610,status:'available',fuels:{diesel:true, e91:true, e95:true, e20:true, e85:true, lpg:false},confirmCount:17,updatedMinAgo:5, zone:'อโศก'},
+  {id:'s8',name:'Susco บางนา',        brand:'SUSCO',   lat:13.6930,lng:100.6150,status:'available',fuels:{diesel:true, e91:true, e95:false,e20:false,e85:false,lpg:false},confirmCount:5, updatedMinAgo:31,zone:'บางนา'},
+];
+const ZONES=[
+  {name:'พระโขนง',avail:12,total:8,level:'critical',trend:'ดีเซลวิกฤต — ยืนยันจาก 2 ปั๊มแล้ว',bar:'r'},
+  {name:'อ่อนนุช', avail:35,total:5,level:'warning', trend:'E91/E95 กำลังจะหมด — คิวยาวมาก',   bar:'a'},
+  {name:'อโศก',   avail:58,total:6,level:'warning', trend:'มีบางชนิด — เช็คก่อนเติม',           bar:'a'},
+  {name:'สีลม',   avail:80,total:9,level:'ok',      trend:'น้ำมันปกติ — ความต้องการปกติ',         bar:'g'},
+  {name:'ลาดพร้าว',avail:72,total:7,level:'ok',      trend:'มีครบทุกชนิด',                       bar:'g'},
+  {name:'บางนา',  avail:65,total:4,level:'ok',      trend:'E95 มีน้อย — ดีเซลมี',               bar:'g'},
+];
+const FTH={diesel:'ดีเซล',e91:'แก๊สฯ 91',e95:'แก๊สฯ 95',e20:'E20',e85:'E85',lpg:'LPG'};
+const STH={available:'มีน้ำมัน',partial:'มีบางชนิด',out:'น้ำมันหมด'};
+
+// ── STATE ────────────────────────────────
+const S={user:null,stations:[],confirms:{},myReports:0,filter:null,selId:null,map:null,markers:{},alertsOn:false,rep:{station:'',action:'',fuels:[]},unsub:null};
+
+// ── FIREBASE ─────────────────────────────
+firebase.initializeApp(FB);
+const db=firebase.firestore(), auth=firebase.auth();
+const gProv=new firebase.auth.GoogleAuthProvider();
+gProv.addScope('profile'); gProv.addScope('email');
+
+auth.onAuthStateChanged(u=>u?onSignedIn(u):showSignin());
+
+async function seedIfEmpty(){
+  try{
+    const s=await db.collection('stations').limit(1).get();
+    if(s.empty){
+      const b=db.batch();
+      SEEDS.forEach(x=>b.set(db.collection('stations').doc(x.id),{...x,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}));
+      await b.commit();
+    }
+  }catch(e){console.warn('seed:',e)}
+}
+
+function listenStations(){
+  if(S.unsub)S.unsub();
+  S.unsub=db.collection('stations').onSnapshot(
+    snap=>{S.stations=snap.docs.map(d=>({id:d.id,...d.data()}));updateUI();},
+    ()=>{S.stations=[...SEEDS];updateUI();}
+  );
+}
+
+async function loadMyData(){
+  if(!S.user)return;
+  try{
+    const[c,r]=await Promise.all([
+      db.collection('confirmations').where('uid','==',S.user.uid).get(),
+      db.collection('reports').where('uid','==',S.user.uid).get(),
+    ]);
+    c.docs.forEach(d=>S.confirms[d.data().stationId]=true);
+    S.myReports=r.size;
+  }catch(e){}
+}
+
+async function doReport(sid,action,fuels){
+  const fm={};
+  Object.keys(FTH).forEach(f=>fm[f]=action==='available'&&fuels.includes(f));
+  try{
+    await db.collection('stations').doc(sid).update({status:action==='available'?'available':'out',fuels:fm,reportCount:firebase.firestore.FieldValue.increment(1),confirmCount:0,updatedMinAgo:0,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    await db.collection('reports').add({stationId:sid,action,fuels,uid:S.user?.uid,name:S.user?.displayName,ts:firebase.firestore.FieldValue.serverTimestamp()});
+    S.myReports++;
+  }catch(e){
+    const s=S.stations.find(x=>x.id===sid);
+    if(s){s.status=action==='available'?'available':'out';s.fuels=fm;s.updatedMinAgo=0;}
+    updateUI();
+  }
+  toast('⚡ ส่งรายงานแล้ว — ขอบคุณ!');
+}
+
+async function doConfirm(sid){
+  if(S.confirms[sid])return;
+  S.confirms[sid]=true;
+  try{
+    await db.collection('stations').doc(sid).update({confirmCount:firebase.firestore.FieldValue.increment(1)});
+    await db.collection('confirmations').add({stationId:sid,uid:S.user?.uid,ts:firebase.firestore.FieldValue.serverTimestamp()});
+  }catch(e){const s=S.stations.find(x=>x.id===sid);if(s)s.confirmCount=(s.confirmCount||0)+1;}
+  renderList(); toast('✓ ยืนยันแล้ว!');
+}
+
+// ── MAP ───────────────────────────────────
+function initMap(){
+  // Double rAF ensures the DOM has been painted and #leaflet-map has real pixel size
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(S.map) return;
+    S.map=L.map('leaflet-map',{center:CENTER,zoom:ZOOM,zoomControl:false,attributionControl:false});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(S.map);
+    L.control.attribution({position:'bottomleft',prefix:false}).addAttribution('© <a href="https://openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com">CARTO</a>').addTo(S.map);
+    renderMarkers();
+    locateUser();
+    // Force resize in case layout wasn't settled
+    setTimeout(()=>S.map.invalidateSize(),300);
+  }));
+}
+
+function mkIcon(status){
+  const c={available:'#00FF88',partial:'#FFB800',out:'#FF3B5C'}[status]||'#FFB800';
+  const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='36' viewBox='0 0 28 36'><path d='M14 0C6.3 0 0 6.3 0 14c0 10 14 22 14 22S28 24 28 14C28 6.3 21.7 0 14 0z' fill='${c}' opacity='.92'/><circle cx='14' cy='14' r='5.5' fill='rgba(0,0,0,.4)'/><circle cx='14' cy='14' r='2.5' fill='white'/></svg>`;
+  return L.icon({iconUrl:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),iconSize:[28,36],iconAnchor:[14,36],popupAnchor:[0,-38]});
+}
+
+function renderMarkers(){
+  if(!S.map)return;
+  const vis=new Set(filtered().map(s=>s.id));
+  Object.keys(S.markers).forEach(id=>{if(!vis.has(id)){S.markers[id].remove();delete S.markers[id];}});
+  filtered().forEach(s=>{
+    if(!s.lat||!s.lng)return;
+    if(S.markers[s.id]){S.markers[s.id].setIcon(mkIcon(s.status));return;}
+    const c={available:'#00FF88',partial:'#FFB800',out:'#FF3B5C'}[s.status]||'#FFB800';
+    const fl=Object.entries(s.fuels||{}).filter(([,v])=>v).map(([k])=>FTH[k]).join(', ')||'ไม่มีเลย';
+    const m=L.marker([s.lat,s.lng],{icon:mkIcon(s.status)}).addTo(S.map);
+    m.bindPopup(`<div style="padding:11px 13px;font-family:'Sarabun',sans-serif;min-width:150px"><div style="color:#E2D9BF;font-size:14px;font-weight:700;line-height:1.25">${s.name}</div><div style="color:#50483A;font-size:10px;margin-top:1px">${s.brand} · ${s.zone||''}</div><div style="margin-top:8px;display:flex;align-items:center;gap:5px"><div style="width:7px;height:7px;border-radius:50%;background:${c};box-shadow:0 0 5px ${c}"></div><span style="color:${c};font-size:12px;font-weight:700">${STH[s.status]||''}</span></div><div style="margin-top:5px;color:#50483A;font-size:11px">น้ำมัน: <span style="color:#E2D9BF">${fl}</span></div><div style="color:#50483A;font-size:11px">ยืนยัน: <span style="color:#E2D9BF">${s.confirmCount||0} คน</span></div></div>`);
+    m.on('click',()=>{S.selId=s.id;renderList();});
+    S.markers[s.id]=m;
+  });
+}
+
+function locateUser(){
+  if(!navigator.geolocation)return;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const ll=[pos.coords.latitude,pos.coords.longitude];
+    if(S.map){
+      S.map.flyTo(ll,ZOOM,{animate:true,duration:.8});
+      L.marker(ll,{icon:L.divIcon({className:'',html:`<div style="width:13px;height:13px;border-radius:50%;background:#38BDF8;border:2px solid #fff;box-shadow:0 0 10px rgba(56,189,248,.7)"></div>`,iconSize:[13,13],iconAnchor:[6,6]})}).addTo(S.map).bindPopup('<div style="background:#111820;color:#38BDF8;padding:7px 11px;border-radius:6px;font-family:Sarabun;font-size:13px">📍 ตำแหน่งของคุณ</div>');
+    }
+  },()=>{});
+}
+
+// ── RENDER ───────────────────────────────
+function filtered(){
+  if(!S.filter)return S.stations;
+  if(S.filter==='available')return S.stations.filter(s=>s.status==='available');
+  if(S.filter==='out')return S.stations.filter(s=>s.status==='out');
+  return S.stations.filter(s=>s.fuels&&s.fuels[S.filter]);
+}
+function updateUI(){renderList();renderMarkers();updateBadge();}
+function updateBadge(){
+  const a=S.stations.filter(s=>s.status==='available').length;
+  const p=S.stations.filter(s=>s.status==='partial').length;
+  const o=S.stations.filter(s=>s.status==='out').length;
+  const ca=g('cnt-a'),cp=g('cnt-p'),co=g('cnt-o');
+  if(ca)ca.textContent=a;if(cp)cp.textContent=p;if(co)co.textContent=o;
+}
+function renderList(){
+  const el=g('slist');if(!el)return;
+  const list=filtered();
+  const sc=g('s-count');if(sc)sc.textContent=list.length;
+  el.innerHTML='';
+  if(!list.length){el.innerHTML=`<div style="text-align:center;padding:20px;font-size:13px;color:var(--muted)">ไม่พบปั๊มที่ตรงกับตัวกรอง</div>`;return;}
+  list.forEach((s,i)=>{
+    const trust=s.confirmCount||0,tl=trust>=10?'hi':trust>=5?'md':'lo',done=!!S.confirms[s.id],sel=S.selId===s.id;
+    const d=document.createElement('div');
+    d.className=`s-card${sel?' sel':''}`;d.style.animationDelay=`${i*.03}s`;
+    d.innerHTML=`<div class="sbar2 ${s.status}"></div><div class="sinfo"><div class="sname">${s.name}</div><div class="srow"><span class="stag ${s.status}">${STH[s.status]||''}</span><span class="stime">⏱ ${s.updatedMinAgo??'?'} นาทีที่แล้ว</span></div><div class="sfuels">${Object.keys(FTH).map(f=>`<span class="fpill ${s.fuels&&s.fuels[f]?'ok':'no'}">${f.toUpperCase()}</span>`).join('')}</div></div><div class="sright"><div class="trust"><div class="trust-n ${tl}">${trust}</div><div class="trust-l">ยืนยัน</div></div><button class="cbtn${done?' done':''}" data-cid="${s.id}">${done?'✓ ยืนยัน':'↑ ยืนยัน'}</button></div>`;
+    d.addEventListener('click',e=>{
+      if(e.target.closest('[data-cid]'))return;
+      S.selId=s.id;
+      if(S.map){S.map.flyTo([s.lat,s.lng],16,{animate:true,duration:.6});S.markers[s.id]?.openPopup();}
+      renderList();
+    });
+    el.appendChild(d);
+  });
+  el.querySelectorAll('[data-cid]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();if(!b.classList.contains('done'))doConfirm(b.dataset.cid);}));
+}
+
+// ── REPORT MODAL ─────────────────────────
+function openReport(){S.rep={station:S.selId||'',action:'',fuels:[]};renderReport();}
+function renderReport(){
+  const old=document.getElementById('rmodal');if(old)old.remove();
+  const fuels=Object.keys(FTH),ok=S.rep.station&&S.rep.action&&S.rep.fuels.length>0;
+  const bd=document.createElement('div');bd.id='rmodal';bd.className='backdrop';
+  bd.innerHTML=`<div class="modal"><div class="mhandle"></div><div class="mtitle">🛢 รายงานสถานะน้ำมัน</div><div class="msub">1 แตะ · ไม่ต้องกรอกฟอร์ม · อัปเดตทันที</div><div class="mlbl">เลือกปั๊ม</div><select class="selinp" id="r-sel"><option value="">— เลือกปั๊มใกล้คุณ —</option>${S.stations.map(s=>`<option value="${s.id}"${S.rep.station===s.id?' selected':''}>${s.name} · ${s.brand}</option>`).join('')}</select><div class="mlbl">สถานะน้ำมัน</div><div class="agrid"><button class="acard avail${S.rep.action==='available'?' on':''}" data-act="available"><span class="aico">⛽</span><span class="albl">มีน้ำมัน</span><span class="asub">น้ำมันยังมีอยู่</span></button><button class="acard nostock${S.rep.action==='out'?' on':''}" data-act="out"><span class="aico">🚫</span><span class="albl">น้ำมันหมด</span><span class="asub">ไม่มีน้ำมันแล้ว</span></button></div><div class="mlbl">ชนิดน้ำมัน</div><div class="fgrid">${fuels.map(f=>`<button class="fbtn${S.rep.fuels.includes(f)?' on':''}" data-f="${f}">${FTH[f]}</button>`).join('')}</div><button class="subbtn" id="r-ok" ${ok?'':'disabled'}>${ok?'📡 ส่งรายงาน':'เลือกปั๊ม + สถานะ + น้ำมัน'}</button></div>`;
+  bd.addEventListener('click',e=>{if(e.target===bd)bd.remove();});
+  document.body.appendChild(bd);
+  g('r-sel').addEventListener('change',e=>{S.rep.station=e.target.value;renderReport();});
+  bd.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',()=>{S.rep.action=b.dataset.act;renderReport();}));
+  bd.querySelectorAll('[data-f]').forEach(b=>b.addEventListener('click',()=>{const f=b.dataset.f;S.rep.fuels.includes(f)?S.rep.fuels=S.rep.fuels.filter(x=>x!==f):S.rep.fuels.push(f);renderReport();}));
+  g('r-ok')?.addEventListener('click',async()=>{if(!ok)return;bd.remove();await doReport(S.rep.station,S.rep.action,S.rep.fuels);});
+}
+
+// ── TREND ────────────────────────────────
+function openTrend(){
+  const old=document.getElementById('tpanel');if(old){old.remove();return;}
+  const p=document.createElement('div');p.id='tpanel';p.className='tpanel';
+  p.innerHTML=`<div class="tphdr"><div><div class="tptitle">📊 ภาพรวมน้ำมันแต่ละโซน</div><div class="tpsub">อัปเดตอัตโนมัติจากชุมชน</div></div><button class="closebtn" id="tp-c">✕ ปิด</button></div><div class="tpbody">${ZONES.map(z=>`<div class="zcard"><div class="ztop"><div class="zname" style="color:${z.bar==='r'?'var(--red)':z.bar==='a'?'var(--amber)':'var(--green)'}">${z.name}</div><div class="zbadge ${z.level}">${z.level==='critical'?'วิกฤต':z.level==='warning'?'เฝ้าระวัง':'ปกติ'}</div></div><div class="ztrack"><div class="zfill ${z.bar}" style="width:${z.avail}%"></div></div><div class="zmeta"><div>ความพร้อม <em>${z.avail}%</em></div><div>ปั๊ม <em>${z.total} แห่ง</em></div></div><div class="znote">↳ ${z.trend}</div></div>`).join('')}<div class="zcard" style="border-color:rgba(56,189,248,.15)"><div style="font-size:15px;font-weight:800;color:var(--blue);margin-bottom:9px">สถานะระบบ</div><div style="font-size:12px;color:var(--muted);line-height:2.1">ผู้รายงานวันนี้ <em style="color:var(--text);font-style:normal">${47+S.myReports} คน</em><br>รายงานของฉัน <em style="color:var(--amber);font-style:normal">${S.myReports} ครั้ง</em><br>ปั๊มที่ติดตาม <em style="color:var(--text);font-style:normal">${S.stations.length} แห่ง</em><br>ความแม่นยำ <em style="color:var(--green);font-style:normal">89.3%</em></div></div></div>`;
+  document.body.appendChild(p);
+  g('tp-c').addEventListener('click',()=>p.remove());
+}
+
+// ── USER MENU ────────────────────────────
+function toggleUserMenu(){
+  const old=document.getElementById('umenu');if(old){old.remove();return;}
+  const m=document.createElement('div');m.id='umenu';m.className='umenu';
+  m.innerHTML=`<div class="umname">${S.user?.displayName||'ผู้ใช้'}</div><div class="umemail">${S.user?.email||''}</div><div class="umstat">รายงานทั้งหมด <em>${S.myReports} ครั้ง</em><br>ยืนยันทั้งหมด <em>${Object.keys(S.confirms).length} ปั๊ม</em></div><button class="umso" id="btn-so">ออกจากระบบ</button>`;
+  setTimeout(()=>document.addEventListener('click',e=>{if(!m.contains(e.target)&&e.target.id!=='btn-avatar')m.remove();},{once:true}),10);
+  document.body.appendChild(m);
+  g('btn-so').addEventListener('click',()=>{auth.signOut();m.remove();});
+}
+
+// ── TOAST ────────────────────────────────
+let toastT;
+function toast(msg){const old=document.querySelector('.toast');if(old)old.remove();clearTimeout(toastT);const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);toastT=setTimeout(()=>t.remove(),2800);}
+
+// ── SCREENS ──────────────────────────────
+function showSignin(){
+  g('scr-loading').classList.add('hidden');
+  g('scr-signin').classList.remove('hidden');
+  if(GOOGLE_CLIENT_ID.startsWith('YOUR_'))g('oauth-hint').classList.remove('hidden');
+}
+
+async function onSignedIn(u){
+  S.user=u;
+  const ab=g('btn-avatar');
+  if(ab){if(u.photoURL)ab.innerHTML=`<img src="${u.photoURL}" alt="av"/>`;else{const s=g('av-init');if(s)s.textContent=(u.displayName||'U')[0].toUpperCase();}}
+  await loadMyData();
+  await seedIfEmpty();
+  listenStations();
+  g('scr-loading').classList.add('hidden');
+  g('scr-signin').classList.add('hidden');
+  g('scr-main').classList.remove('hidden');
+  g('btn-fab').classList.remove('hidden');
+  initMap();
+  bindEvents();
+}
+
+// ── EVENTS ───────────────────────────────
+function bindEvents(){
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      const f=c.dataset.f;
+      S.filter=S.filter===f?null:f;
+      document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+      if(S.filter)c.classList.add('on');
+      updateUI();
+    });
+  });
+  g('btn-fab')?.addEventListener('click',openReport);
+  g('btn-locate')?.addEventListener('click',()=>{locateUser();toast('📍 กำลังหาตำแหน่ง...');});
+  g('btn-alert')?.addEventListener('click',()=>{
+    S.alertsOn=!S.alertsOn;
+    g('btn-alert').classList.toggle('active',S.alertsOn);
+    g('alert-lbl').textContent=S.alertsOn?'แจ้งเตือนเปิด':'แจ้งเตือน';
+    toast(S.alertsOn?'🔔 เปิดแจ้งเตือนแล้ว':'🔕 ปิดแจ้งเตือนแล้ว');
+  });
+  g('btn-trend')?.addEventListener('click',openTrend);
+  g('btn-avatar')?.addEventListener('click',e=>{e.stopPropagation();toggleUserMenu();});
+}
+
+g('btn-signin').addEventListener('click',()=>{
+  auth.signInWithPopup(gProv).catch(e=>{
+    if(e.code==='auth/popup-blocked')toast('⚠ กรุณาอนุญาต popup ในเบราว์เซอร์');
+    else if(e.code==='auth/operation-not-allowed')toast('⚠ เปิด Google Sign-in ใน Firebase Console ก่อน');
+    else{console.error(e);toast('⚠ เข้าสู่ระบบไม่ได้');}
+  });
+});
+
+function g(id){return document.getElementById(id);}
+</script>
 </body>
 </html>

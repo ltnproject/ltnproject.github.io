@@ -100,7 +100,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   position:absolute;
   top:0;left:0;right:0;bottom:0;
 }
-.leaflet-tile-pane{filter:brightness(.48) saturate(.25) hue-rotate(185deg)}
+.leaflet-tile-pane{filter:brightness(.75) saturate(.5) contrast(1.05)}
 .leaflet-popup-content-wrapper{background:var(--bg3)!important;border:1px solid var(--border-hi)!important;border-radius:8px!important;box-shadow:0 8px 28px rgba(0,0,0,.75)!important;padding:0!important}
 .leaflet-popup-tip-container{display:none}
 .leaflet-popup-content{margin:0!important}
@@ -442,7 +442,10 @@ function initMap(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     if(S.map) return;
     S.map=L.map('leaflet-map',{center:CENTER,zoom:ZOOM,zoomControl:false,attributionControl:false});
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(S.map);
+    // Stadia Alidade Smooth Dark — more detail, road labels, brighter
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',{
+      maxZoom:20, attribution:'© Stadia Maps © OpenMapTiles © OpenStreetMap'
+    }).addTo(S.map);
     L.control.attribution({position:'bottomleft',prefix:false}).addAttribution('© <a href="https://openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com">CARTO</a>').addTo(S.map);
     renderMarkers();
     locateUser();
@@ -671,27 +674,39 @@ function g(id){return document.getElementById(id);}
 // ── SIGN-IN BUTTON ────────────────────────
 // ใช้ .onclick แทน addEventListener เพื่อให้ browser รู้ว่าเป็น direct user gesture
 // ป้องกัน popup ถูกบล็อก
+// ── Safari/iOS safe: ใช้ redirect เสมอ ──────────────
+// popup ถูกบล็อกบน Safari/iOS แม้จะเป็น direct click
+// redirect คือวิธีที่ปลอดภัยที่สุดทุก browser/platform
 g('btn-signin').onclick = function() {
-  auth.signInWithPopup(gProv).catch(function(e) {
-    console.error('Sign-in error:', e.code, e.message);
-    if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request') {
-      // Fallback → redirect mode (ไม่ถูกบล็อกแน่นอน)
-      toast('🔄 เปลี่ยนเป็น redirect mode...');
-      setTimeout(()=>auth.signInWithRedirect(gProv), 800);
-    } else if (e.code === 'auth/operation-not-allowed') {
-      toast('⚠ เปิด Google Sign-in ใน Firebase Console ก่อน');
-    } else if (e.code === 'auth/unauthorized-domain') {
-      toast('⚠ เพิ่ม domain นี้ใน Authorized origins ใน Google Cloud');
-    } else {
-      toast('⚠ เข้าสู่ระบบไม่ได้ — ' + e.code);
-    }
-  });
+  auth.signInWithRedirect(gProv);
 };
 
-// รับผล redirect กลับมา (กรณี fallback ไป redirect mode)
-auth.getRedirectResult().then(result=>{
-  if(result && result.user) onSignedIn(result.user);
-}).catch(e=>console.warn('redirect result:',e));
+// รับผลลัพธ์หลัง redirect กลับมา — ทำงานทุก browser
+auth.getRedirectResult()
+  .then(function(result){
+    if(result && result.user){
+      onSignedIn(result.user);
+    }
+  })
+  .catch(function(e){
+    console.error('Redirect result error:', e.code, e.message);
+    if(e.code === 'auth/operation-not-allowed'){
+      // แสดง error ใน signin screen เพราะ toast อาจยังไม่ mount
+      const hint = g('oauth-hint');
+      if(hint){
+        hint.classList.remove('hidden');
+        hint.innerHTML = '⚠ เปิด Google Sign-in ใน Firebase Console ก่อน<br>Authentication → Sign-in method → Google → Enable';
+      }
+    } else if(e.code === 'auth/unauthorized-domain'){
+      const hint = g('oauth-hint');
+      if(hint){
+        hint.classList.remove('hidden');
+        hint.innerHTML = '⚠ เพิ่ม domain <b>' + location.hostname + '</b><br>ใน Authorized JavaScript origins<br>ใน Google Cloud Console';
+      }
+    } else if(e.code && e.code !== 'auth/null-user'){
+      console.warn('Non-critical redirect error:', e.code);
+    }
+  });
 </script>
 </body>
 </html>

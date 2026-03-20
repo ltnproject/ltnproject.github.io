@@ -443,9 +443,9 @@ function initMap(){
     if(S.map) return;
     S.map=L.map('leaflet-map',{center:CENTER,zoom:ZOOM,zoomControl:false,attributionControl:false});
     // Stadia Alidade Smooth Dark — more detail, road labels, brighter
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',{
-      maxZoom:20, attribution:'© Stadia Maps © OpenMapTiles © OpenStreetMap'
-    }).addTo(S.map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
     L.control.attribution({position:'bottomleft',prefix:false}).addAttribution('© <a href="https://openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com">CARTO</a>').addTo(S.map);
     renderMarkers();
     locateUser();

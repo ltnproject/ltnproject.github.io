@@ -604,15 +604,33 @@ function bindEvents(){
   g('btn-avatar')?.addEventListener('click',e=>{e.stopPropagation();toggleUserMenu();});
 }
 
-g('btn-signin').addEventListener('click',()=>{
-  auth.signInWithPopup(gProv).catch(e=>{
-    if(e.code==='auth/popup-blocked')toast('⚠ กรุณาอนุญาต popup ในเบราว์เซอร์');
-    else if(e.code==='auth/operation-not-allowed')toast('⚠ เปิด Google Sign-in ใน Firebase Console ก่อน');
-    else{console.error(e);toast('⚠ เข้าสู่ระบบไม่ได้');}
-  });
-});
 
 function g(id){return document.getElementById(id);}
+
+// ── SIGN-IN BUTTON ────────────────────────
+// ใช้ .onclick แทน addEventListener เพื่อให้ browser รู้ว่าเป็น direct user gesture
+// ป้องกัน popup ถูกบล็อก
+g('btn-signin').onclick = function() {
+  auth.signInWithPopup(gProv).catch(function(e) {
+    console.error('Sign-in error:', e.code, e.message);
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request') {
+      // Fallback → redirect mode (ไม่ถูกบล็อกแน่นอน)
+      toast('🔄 เปลี่ยนเป็น redirect mode...');
+      setTimeout(()=>auth.signInWithRedirect(gProv), 800);
+    } else if (e.code === 'auth/operation-not-allowed') {
+      toast('⚠ เปิด Google Sign-in ใน Firebase Console ก่อน');
+    } else if (e.code === 'auth/unauthorized-domain') {
+      toast('⚠ เพิ่ม domain นี้ใน Authorized origins ใน Google Cloud');
+    } else {
+      toast('⚠ เข้าสู่ระบบไม่ได้ — ' + e.code);
+    }
+  });
+};
+
+// รับผล redirect กลับมา (กรณี fallback ไป redirect mode)
+auth.getRedirectResult().then(result=>{
+  if(result && result.user) onSignedIn(result.user);
+}).catch(e=>console.warn('redirect result:',e));
 </script>
 </body>
 </html>

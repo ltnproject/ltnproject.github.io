@@ -420,6 +420,13 @@ async function seedIfEmpty(){
       const b=db.batch();
       SEEDS.forEach(x=>b.set(db.collection('stations').doc(x.id),{...x,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}));
       await b.commit();
+      // #region agent log seedIfEmpty seeded
+      fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H6',location:'index.html:seedIfEmpty',message:'Seeded stations because collection was empty',data:{seedCount:SEEDS.length},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+    }else{
+      // #region agent log seedIfEmpty already has data
+      fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H6',location:'index.html:seedIfEmpty',message:'Stations already present; no seeding',data:{hasAny:true},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
     }
   }catch(e){console.warn('seed:',e)}
 }
@@ -427,8 +434,19 @@ async function seedIfEmpty(){
 function listenStations(){
   if(S.unsub)S.unsub();
   S.unsub=db.collection('stations').onSnapshot(
-    snap=>{S.stations=snap.docs.map(d=>({id:d.id,...d.data()}));updateUI();},
-    ()=>{S.stations=[...SEEDS];updateUI();}
+    snap=>{
+      S.stations=snap.docs.map(d=>({id:d.id,...d.data()}));
+      // #region agent log listenStations snapshot
+      fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H6',location:'index.html:listenStations',message:'stations snapshot received',data:{snapSize:snap.size,stationsAfterMap:S.stations.length,firstId:S.stations[0]?.id||null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      updateUI();
+    },
+    err=>{
+      // #region agent log listenStations error
+      fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H6',location:'index.html:listenStations',message:'stations snapshot error -> fallback to SEEDS',data:{error:(err&&err.message)?err.message:String(err)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      S.stations=[...SEEDS];updateUI();
+    }
   );
 }
 
@@ -631,6 +649,9 @@ function updateBadge(){
 function renderList(){
   const el=g('slist');if(!el)return;
   const list=filtered();
+  // #region agent log renderList
+  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H7',location:'index.html:renderList',message:'renderList invoked',data:{listLength:list.length,filter:S.filter||null,hasSlist:!!el,hasScount:!!g('s-count')},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   const sc=g('s-count');if(sc)sc.textContent=list.length;
   el.innerHTML='';
   if(!list.length){el.innerHTML=`<div style="text-align:center;padding:20px;font-size:13px;color:var(--muted)">ไม่พบปั๊มที่ตรงกับตัวกรอง</div>`;return;}

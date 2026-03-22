@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | D4rkzB</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <header class="container header">
+        <a href="home.html" class="logo">D4rkzB</a>
+        <nav>
+            <a href="home.html">Home</a>
+            <a href="doc.html">Docs</a>
+            <a href="download.html">Download</a>
+            <a href="staff.html">Staff</a>
+            <a href="dashboard.html" class="active">Dashboard</a>
+            <button class="btn-primary" onclick="D4rkzB.signOut()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Sign Out</button>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1>My API Keys</h1>
+            <button class="btn-primary" onclick="generateNewKey()">
+                <i data-lucide="plus" style="width: 20px; height: 20px;"></i> Generate New Key
+            </button>
+        </div>
+
+        <div id="keys-container" class="grid">
+            <!-- Keys will be loaded here -->
+        </div>
+
+        <div id="no-keys" class="glass card hidden" style="text-align: center; padding: 4rem;">
+            <i data-lucide="key" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <p style="color: var(--text-muted);">No API keys found. Generate one to get started!</p>
+        </div>
+    </main>
+
+    <footer class="container">&copy; 2026 D4rkzB | Database for Everyone</footer>
+
+    <script src="app.js"></script>
+    <script>
+        let currentUser = null;
+
+        async function init() {
+            currentUser = await D4rkzB.requireAuth();
+            if (currentUser) fetchKeys();
+        }
+
+        async function fetchKeys() {
+            const { data, error } = await D4rkzB.client
+                .from('user_keys')
+                .select('*')
+                .eq('user_id', currentUser.id);
+
+            const container = document.getElementById('keys-container');
+            const noKeys = document.getElementById('no-keys');
+            container.innerHTML = '';
+
+            if (data && data.length > 0) {
+                noKeys.classList.add('hidden');
+                data.forEach(k => {
+                    const card = document.createElement('div');
+                    card.className = 'glass card';
+                    card.style.display = 'flex';
+                    card.style.flexDirection = 'column';
+                    card.style.gap = '1rem';
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h3 style="margin-bottom: 0.2rem;">${k.label || 'API Key'}</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Created ${new Date(k.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <button onclick="deleteKey(${k.id})" style="background: none; border: none; color: #ff4444; cursor: pointer;">
+                                <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <code style="font-size: 0.9rem; color: var(--primary);">${k.api_key.substring(0, 15)}...</code>
+                            <button onclick="copyToClipboard('${k.api_key}', this)" style="background: none; border: none; color: white; cursor: pointer;">
+                                <i data-lucide="copy" style="width: 18px; height: 18px;"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+                lucide.createIcons();
+            } else {
+                noKeys.classList.remove('hidden');
+            }
+        }
+
+        async function generateNewKey() {
+            const uuid = self.crypto.randomUUID().replace(/-/g, '');
+            const newKey = `dkz_${uuid}`;
+            const { error } = await D4rkzB.client
+                .from('user_keys')
+                .insert({
+                    user_id: currentUser.id,
+                    api_key: newKey,
+                    label: `Key ${Date.now().toString().slice(-4)}`
+                });
+            if (!error) fetchKeys();
+        }
+
+        async function deleteKey(id) {
+            if (confirm('Are you sure you want to delete this key?')) {
+                const { error } = await D4rkzB.client.from('user_keys').delete().eq('id', id);
+                if (!error) fetchKeys();
+            }
+        }
+
+        function copyToClipboard(text, btn) {
+            navigator.clipboard.writeText(text);
+            const icon = btn.querySelector('i');
+            icon.setAttribute('data-lucide', 'check');
+            icon.style.color = '#4ade80';
+            lucide.createIcons();
+            setTimeout(() => {
+                icon.setAttribute('data-lucide', 'copy');
+                icon.style.color = 'white';
+                lucide.createIcons();
+            }, 2000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

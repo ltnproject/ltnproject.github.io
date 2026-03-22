@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docs | D4rkzB</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <header class="container header">
+        <a href="home.html" class="logo">D4rkzB</a>
+        <nav>
+            <a href="home.html">Home</a>
+            <a href="doc.html" class="active">Docs</a>
+            <a href="download.html">Download</a>
+            <a href="staff.html">Staff</a>
+            <a href="dashboard.html">Dashboard</a>
+        </nav>
+    </header>
+
+    <main class="container" style="max-width: 800px; margin: 0 auto;">
+        <h1 style="margin-bottom: 2rem;">Documentation</h1>
+        
+        <section class="glass card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <i data-lucide="book" style="color: var(--primary);"></i>
+                <h2>Getting Started</h2>
+            </div>
+            <p style="color: var(--text-muted); line-height: 1.6;">
+                D4rkzB is designed to be the simplest way to store and retrieve data. 
+                To start using D4rkzB, you first need an API Key from your <a href="dashboard.html" style="color: white; text-decoration: underline;">Dashboard</a>.
+            </p>
+        </section>
+
+        <section class="glass card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <i data-lucide="terminal" style="color: var(--primary);"></i>
+                <h2>Installation</h2>
+            </div>
+            <div style="background: black; padding: 1rem; border-radius: 8px; font-family: monospace; margin-bottom: 1rem;">
+                npm install d4rkzb
+            </div>
+        </section>
+
+        <section class="glass card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <i data-lucide="code" style="color: var(--primary);"></i>
+                <h2>Usage Example</h2>
+            </div>
+            <div style="background: black; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; overflow-x: auto;">
+                <pre style="color: #a5b4fc;">
+import { D4rkzB } from 'd4rkzb';
+
+const db = new D4rkzB('YOUR_API_KEY');
+
+// Insert data
+await db.insert('users', { 
+  name: 'John Doe', 
+  email: 'john@example.com' 
+});
+
+// Fetch data
+const users = await db.fetch('users');
+                </pre>
+            </div>
+        </section>
+    </main>
+
+    <footer class="container">&copy; 2026 D4rkzB | Database for Everyone</footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

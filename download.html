@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download | D4rkzB</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <header class="container header">
+        <a href="home.html" class="logo">D4rkzB</a>
+        <nav>
+            <a href="home.html">Home</a>
+            <a href="doc.html">Docs</a>
+            <a href="download.html" class="active">Download</a>
+            <a href="staff.html">Staff</a>
+            <a href="dashboard.html">Dashboard</a>
+        </nav>
+    </header>
+
+    <main class="container" style="text-align: center; padding-top: 4rem;">
+        <h1 style="font-size: 3rem; margin-bottom: 1rem;">Get the <span style="color: var(--primary);">D4rkzB</span> App</h1>
+        <p style="color: var(--text-muted); margin-bottom: 4rem; font-size: 1.2rem;">
+            Experience the power of D4rkzB directly on your desktop or mobile device.
+        </p>
+
+        <div class="grid">
+            <div class="glass card" style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+                <i data-lucide="monitor" style="width: 48px; height: 48px;"></i>
+                <h2>Windows</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Full desktop experience with local caching support.</p>
+                <button class="btn-primary" style="width: 100%; opacity: 0.5; cursor: not-allowed;" disabled>
+                    <i data-lucide="download" style="width: 20px; height: 20px;"></i> Download v1.0.0
+                </button>
+                <span style="font-size: 0.8rem; color: var(--primary);">Coming Soon</span>
+            </div>
+
+            <div class="glass card" style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem; opacity: 0.7;">
+                <i data-lucide="apple" style="width: 48px; height: 48px;"></i>
+                <h2>macOS</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Optimized for M1/M2 chips. Built for speed.</p>
+                <button class="btn-primary" style="width: 100%;" disabled>
+                    <i data-lucide="download" style="width: 20px; height: 20px;"></i> Coming Shortly
+                </button>
+            </div>
+
+            <div class="glass card" style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem; opacity: 0.7;">
+                <i data-lucide="smartphone" style="width: 48px; height: 48px;"></i>
+                <h2>Mobile</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Manage your database on the go. iOS & Android.</p>
+                <button class="btn-primary" style="width: 100%;" disabled>
+                    Waitlist Only
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="container">&copy; 2026 D4rkzB | Database for Everyone</footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

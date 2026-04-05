@@ -10,12 +10,12 @@
 // ============================================================
 
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyBQz_prZbvrVNDsfKXznHoc4sWovXD1pKo",
+  authDomain:        "ltm-meeting.firebaseapp.com",
+  projectId:         "ltm-meeting",
+  storageBucket:     "ltm-meeting.firebasestorage.app",
+  messagingSenderId: "1012315323739",
+  appId:             "1:1012315323739:web:2a0f2ec22efc42bee36e7e"
 };
 
 // ── Initialize Firebase (do not edit below this line) ──────

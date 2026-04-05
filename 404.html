@@ -1,21 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Redirecting...</title>
-  <script>
-    // GitHub Pages 404 trick:
-    // When someone visits /abc123, GitHub serves this 404.html
-    // We grab the slug from the path and send them to index.html with ?r=slug
-    const path = window.location.pathname.replace(/^\//, '').split('/')[0];
-    if (path && path !== '404.html') {
-      window.location.replace('/?r=' + encodeURIComponent(path));
-    } else {
-      window.location.replace('/');
-    }
-  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — LtM Meeting</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <p style="font-family:monospace;color:#555;text-align:center;margin-top:40vh;">Redirecting...</p>
+  <div class="bg-mesh"></div>
+  <div class="bg-grid"></div>
+
+  <nav class="nav">
+    <div class="nav-brand">
+      <span class="brand-icon">◈</span>
+      <span class="brand-name">LtM Meeting</span>
+    </div>
+  </nav>
+
+  <div class="page-404">
+    <div class="page-404-content">
+      <div class="page-404-code">404</div>
+      <div class="page-404-title">Room not found.</div>
+      <p class="page-404-sub">
+        The meeting you're looking for doesn't exist<br>
+        or the link has expired.
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="index.html" class="btn btn-ghost">← Home</a>
+        <a href="dash.html" class="btn btn-primary">Go to Dashboard</a>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

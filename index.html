@@ -1,823 +1,157 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>FuelRadar — เช็คน้ำมันแบบเรียลไทม์</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>LtM Meeting — Connect Without Limits</title>
+  <meta name="description" content="Crystal-clear video meetings. Instant setup. No downloads.">
+  <link rel="stylesheet" href="css/style.css">
 
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --amber:#FFB800;--green:#00FF88;--red:#FF3B5C;--blue:#38BDF8;
-  --bg:#07090D;--bg2:#0C1018;--bg3:#111820;
-  --border:rgba(255,184,0,0.12);--border-hi:rgba(255,184,0,0.35);
-  --text:#E2D9BF;--muted:#50483A;
-  --th:'Sarabun',sans-serif;--mono:'Share Tech Mono',monospace;
-  --safe-b:env(safe-area-inset-bottom,0px);
-}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--th)}
-
-/* ── LAYOUT SHELL ── */
-/* The entire app uses position:fixed children so nothing causes scroll */
-#scr-loading,#scr-signin{
-  position:fixed;inset:0;z-index:900;background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:28px 20px;text-align:center;
-}
-#scr-main{
-  position:fixed;inset:0;z-index:10;
-  display:flex;flex-direction:column;
-}
-
-.hidden{display:none!important}
-
-/* ── LOADING ── */
-.spinner{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,184,0,.15);border-top-color:var(--amber);animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.load-txt{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:14px}
-
-/* ── SIGN-IN ── */
-.si-logo{font-family:var(--mono);font-size:34px;color:var(--amber);letter-spacing:4px}
-.si-logo span{opacity:.22}
-.si-sub{font-size:13px;color:var(--muted);margin-top:6px;margin-bottom:34px}
-.si-radar{width:128px;height:128px;border-radius:50%;border:1px solid rgba(255,184,0,.18);position:relative;margin-bottom:38px}
-.si-radar::before{content:'';position:absolute;inset:24px;border-radius:50%;border:1px solid rgba(255,184,0,.1)}
-.si-radar::after{content:'';position:absolute;inset:48px;border-radius:50%;border:1px solid rgba(255,184,0,.07)}
-.si-sweep{position:absolute;inset:0;border-radius:50%;overflow:hidden}
-.si-sweep::after{content:'';position:absolute;inset:0;background:conic-gradient(from 0deg,transparent,rgba(255,184,0,.2) 45deg,transparent 90deg);animation:sweep 3s linear infinite}
-@keyframes sweep{to{transform:rotate(360deg)}}
-.si-dot{position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);background:var(--amber);box-shadow:0 0 14px var(--amber)}
-.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;max-width:290px;padding:13px 20px;border-radius:10px;border:1px solid var(--border-hi);background:var(--bg3);color:var(--text);font-family:var(--th);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s}
-.google-btn:hover{border-color:var(--amber);background:rgba(255,184,0,.08);color:var(--amber)}
-.google-btn:active{transform:scale(.97)}
-.si-note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.7}
-.si-warn{margin-top:12px;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,184,0,.2);background:rgba(255,184,0,.05);font-family:var(--mono);font-size:9px;color:var(--muted);max-width:290px;line-height:1.9;text-align:left}
-.si-warn a{color:var(--blue)}
-
-/* ── HEADER ── */
-.header{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:9px 14px 7px;background:rgba(7,9,13,.97);border-bottom:1px solid var(--border);z-index:50}
-.logo-ring{animation:spin 8s linear infinite;flex-shrink:0}
-.logo-wrap{display:flex;align-items:center;gap:8px}
-.logo-name{font-family:var(--mono);font-size:17px;color:var(--amber);letter-spacing:1px}
-.logo-name span{opacity:.25}
-.logo-sub{font-size:10px;color:var(--muted)}
-.h-right{display:flex;align-items:center;gap:6px}
-.hbtn{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:5px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--th);font-size:11px;font-weight:600;transition:all .13s}
-.hbtn:hover{border-color:var(--border-hi);color:var(--text)}
-.hbtn.active{border-color:var(--amber);color:var(--amber);background:rgba(255,184,0,.08)}
-.pulse-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
-.hbtn.active .pulse-dot{box-shadow:0 0 5px var(--amber);animation:blink 1.4s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.avatar{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border-hi);overflow:hidden;cursor:pointer;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--amber);transition:border-color .15s}
-.avatar:hover{border-color:var(--amber)}
-.avatar img{width:100%;height:100%;object-fit:cover}
-
-/* ── FILTERS ── */
-.filters{flex-shrink:0;padding:7px 0;background:rgba(7,9,13,.95);border-bottom:1px solid var(--border);z-index:40}
-.fscroll{display:flex;gap:5px;padding:0 14px;overflow-x:auto;scrollbar-width:none}
-.fscroll::-webkit-scrollbar{display:none}
-.chip{flex-shrink:0;padding:4px 12px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-family:var(--th);font-size:12px;font-weight:600;cursor:pointer;transition:all .13s;white-space:nowrap}
-.chip.on{border-color:var(--amber);color:var(--amber);background:rgba(255,184,0,.08)}
-.chip:hover:not(.on){border-color:rgba(255,184,0,.22);color:var(--text)}
-
-/* ── MAP ── */
-/* KEY: use flex:1 with min-height:0 so the map takes all remaining space */
-#map-wrap{
-  flex:1;
-  min-height:0;      /* ← critical for flex children */
-  position:relative;
-}
-/* Leaflet map fills the wrapper absolutely */
-#leaflet-map{
-  position:absolute;
-  top:0;left:0;right:0;bottom:0;
-}
-.leaflet-tile-pane{filter:brightness(.75) saturate(.5) contrast(1.05)}
-.leaflet-popup-content-wrapper{background:var(--bg3)!important;border:1px solid var(--border-hi)!important;border-radius:8px!important;box-shadow:0 8px 28px rgba(0,0,0,.75)!important;padding:0!important}
-.leaflet-popup-tip-container{display:none}
-.leaflet-popup-content{margin:0!important}
-.leaflet-popup-close-button{color:var(--muted)!important;top:8px!important;right:10px!important}
-.leaflet-control-attribution{background:rgba(7,9,13,.7)!important;color:#333!important;font-size:8px!important}
-.leaflet-control-attribution a{color:#444!important}
-
-.map-badge{position:absolute;top:10px;left:10px;z-index:400;background:rgba(7,9,13,.93);border:1px solid var(--border);border-radius:6px;padding:8px 12px;pointer-events:none}
-.mb-row{display:flex;align-items:center;gap:6px;font-family:var(--th);font-size:11px;color:var(--muted)}
-.mb-row+.mb-row{margin-top:3px}
-.mb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.locate-btn{position:absolute;bottom:12px;right:12px;z-index:400;width:38px;height:38px;border-radius:8px;background:rgba(7,9,13,.93);border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);transition:all .15s}
-.locate-btn:hover{color:var(--amber);border-color:var(--amber)}
-
-/* ── BOTTOM SHEET ── */
-.bsheet{flex-shrink:0;height:195px;display:flex;flex-direction:column;background:rgba(7,9,13,.98);border-top:1px solid var(--border-hi);z-index:30}
-.sbar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 6px;border-bottom:1px solid var(--border);flex-shrink:0;cursor:pointer}
-.shandle{width:30px;height:3px;background:var(--border-hi);border-radius:2px}
-.stitle{font-family:var(--th);font-size:12px;font-weight:700;color:var(--muted)}
-.live-badge{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;color:var(--green)}
-.live-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 1.2s infinite}
-.slist{flex:1;overflow-y:auto;padding:5px 10px calc(5px + var(--safe-b));scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-.slist::-webkit-scrollbar{width:2px}
-.slist::-webkit-scrollbar-thumb{background:var(--border)}
-
-/* ── STATION CARD ── */
-.s-card{display:flex;align-items:flex-start;gap:9px;padding:8px 10px;border-radius:7px;margin-bottom:5px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;transition:all .13s;animation:slideIn .2s ease both}
-@keyframes slideIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-.s-card:hover{border-color:var(--border-hi);background:var(--bg3)}
-.s-card.sel{border-color:var(--amber);background:rgba(255,184,0,.04)}
-.sbar2{width:3px;align-self:stretch;border-radius:2px;flex-shrink:0}
-.sbar2.available{background:var(--green);box-shadow:0 0 6px rgba(0,255,136,.45)}
-.sbar2.partial{background:var(--amber);box-shadow:0 0 6px rgba(255,184,0,.45)}
-.sbar2.out{background:var(--red);box-shadow:0 0 6px rgba(255,59,92,.45)}
-.sinfo{flex:1;min-width:0}
-.sname{font-family:var(--th);font-size:13px;font-weight:700;color:var(--text);line-height:1.2}
-.srow{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
-.stag{font-family:var(--th);font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;border:1px solid}
-.stag.available{color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.07)}
-.stag.partial{color:var(--amber);border-color:rgba(255,184,0,.3);background:rgba(255,184,0,.07)}
-.stag.out{color:var(--red);border-color:rgba(255,59,92,.3);background:rgba(255,59,92,.07)}
-.stime{font-size:10px;color:var(--muted)}
-.sfuels{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap}
-.fpill{font-family:var(--mono);font-size:8px;padding:1px 4px;border-radius:2px}
-.fpill.ok{background:rgba(0,255,136,.08);color:var(--green)}
-.fpill.no{background:rgba(255,59,92,.05);color:rgba(255,59,92,.35);text-decoration:line-through}
-.sright{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
-.trust{display:flex;flex-direction:column;align-items:center;font-family:var(--mono)}
-.trust-n{font-size:17px;font-weight:bold;line-height:1}
-.trust-n.hi{color:var(--green);text-shadow:0 0 8px rgba(0,255,136,.35)}
-.trust-n.md{color:var(--amber)}
-.trust-n.lo{color:var(--muted)}
-.trust-l{font-size:7px;color:var(--muted);letter-spacing:1px}
-.cbtn{padding:3px 8px;border-radius:3px;border:1px solid rgba(0,255,136,.3);background:rgba(0,255,136,.05);color:var(--green);font-family:var(--th);font-size:10px;font-weight:700;cursor:pointer;transition:all .13s}
-.cbtn:hover{background:rgba(0,255,136,.14)}
-.cbtn.done{border-color:var(--green);background:rgba(0,255,136,.18);cursor:default}
-
-/* ── FAB ── */
-.fab{position:fixed;bottom:calc(16px + var(--safe-b));right:14px;z-index:60;width:52px;height:52px;border-radius:50%;background:var(--amber);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 22px rgba(255,184,0,.45),0 3px 12px rgba(0,0,0,.6);transition:all .18s}
-.fab:hover{transform:scale(1.08);box-shadow:0 0 32px rgba(255,184,0,.6),0 3px 16px rgba(0,0,0,.6)}
-.fab:active{transform:scale(.95)}
-
-/* ── MODAL ── */
-.backdrop{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.82);display:flex;align-items:flex-end;animation:fadeIn .18s ease}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.modal{width:100%;background:var(--bg3);border:1px solid var(--border-hi);border-bottom:none;border-radius:16px 16px 0 0;padding:16px 16px calc(24px + var(--safe-b));animation:slideUp .22s ease;max-height:92vh;overflow-y:auto}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.mhandle{width:30px;height:3px;background:var(--border-hi);border-radius:2px;margin:0 auto 14px}
-.mtitle{font-size:20px;font-weight:800;color:var(--amber);margin-bottom:2px}
-.msub{font-size:12px;color:var(--muted);margin-bottom:16px}
-.mlbl{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;margin-top:14px}
-.selinp{width:100%;padding:10px 12px;border-radius:6px;background:var(--bg2);border:1px solid var(--border-hi);color:var(--text);font-family:var(--th);font-size:13px;appearance:none}
-.selinp option{background:var(--bg2)}
-.agrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.acard{padding:12px;border-radius:8px;border:1.5px solid;background:transparent;cursor:pointer;transition:all .13s;text-align:left}
-.acard .aico{font-size:22px;display:block;margin-bottom:4px}
-.acard .albl{font-size:14px;font-weight:700;display:block}
-.acard .asub{font-size:10px;color:rgba(255,255,255,.35)}
-.acard.avail{border-color:rgba(0,255,136,.22);color:var(--green)}
-.acard.avail.on,.acard.avail:hover{background:rgba(0,255,136,.1);border-color:var(--green)}
-.acard.nostock{border-color:rgba(255,59,92,.22);color:var(--red)}
-.acard.nostock.on,.acard.nostock:hover{background:rgba(255,59,92,.1);border-color:var(--red)}
-.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
-.fbtn{padding:8px 4px;border-radius:5px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);font-family:var(--th);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .12s}
-.fbtn.on{border-color:var(--amber);color:var(--amber);background:rgba(255,184,0,.08)}
-.subbtn{width:100%;padding:13px;margin-top:14px;border-radius:8px;background:var(--amber);border:none;color:#000;font-family:var(--th);font-size:16px;font-weight:800;cursor:pointer;transition:all .13s}
-.subbtn:disabled{background:#1a2030;color:var(--muted);cursor:not-allowed}
-.subbtn:not(:disabled):hover{background:#ffc929}
-
-/* ── TREND ── */
-.tpanel{position:fixed;inset:0;z-index:150;background:rgba(7,9,13,.97);display:flex;flex-direction:column;animation:fadeIn .18s ease}
-.tphdr{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.tptitle{font-size:20px;font-weight:800;color:var(--amber)}
-.tpsub{font-size:11px;color:var(--muted)}
-.closebtn{padding:6px 12px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--th);font-size:12px;cursor:pointer;transition:all .13s}
-.closebtn:hover{border-color:var(--border-hi);color:var(--text)}
-.tpbody{flex:1;overflow-y:auto;padding:12px}
-.zcard{margin-bottom:10px;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2)}
-.ztop{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
-.zname{font-size:16px;font-weight:700}
-.zbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px;border:1px solid}
-.zbadge.critical{color:var(--red);border-color:rgba(255,59,92,.3);background:rgba(255,59,92,.07)}
-.zbadge.warning{color:var(--amber);border-color:rgba(255,184,0,.3);background:rgba(255,184,0,.06)}
-.zbadge.ok{color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.05)}
-.ztrack{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:5px}
-.zfill{height:100%;border-radius:3px;transition:width 1.2s ease}
-.zfill.r{background:linear-gradient(90deg,#8a1122,var(--red))}
-.zfill.a{background:linear-gradient(90deg,#8a6200,var(--amber))}
-.zfill.g{background:linear-gradient(90deg,#008a48,var(--green))}
-.zmeta{font-size:10px;color:var(--muted);display:flex;gap:14px}
-.zmeta em{color:var(--text);font-style:normal}
-.znote{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5}
-
-/* ── USER MENU ── */
-.umenu{position:fixed;top:48px;right:10px;z-index:300;background:var(--bg3);border:1px solid var(--border-hi);border-radius:10px;padding:12px;min-width:185px;animation:fadeIn .14s ease;box-shadow:0 8px 28px rgba(0,0,0,.7)}
-.umname{font-size:15px;font-weight:700;color:var(--text)}
-.umemail{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px;margin-bottom:9px}
-.umstat{font-size:11px;color:var(--muted);padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--border);line-height:2}
-.umstat em{color:var(--amber);font-style:normal}
-.umso{width:100%;padding:8px;border-radius:5px;border:1px solid rgba(255,59,92,.3);background:transparent;color:var(--red);font-family:var(--th);font-size:13px;font-weight:700;cursor:pointer;transition:all .13s}
-.umso:hover{background:rgba(255,59,92,.1)}
-
-/* ── TOAST ── */
-.toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9990;padding:8px 16px;border-radius:8px;border:1px solid var(--amber);background:rgba(7,9,13,.97);font-family:var(--th);font-size:12px;font-weight:600;color:var(--amber);display:flex;align-items:center;gap:7px;box-shadow:0 0 18px rgba(255,184,0,.2),0 4px 14px rgba(0,0,0,.6);animation:toastIn .22s ease,toastOut .25s ease 2.5s forwards;white-space:nowrap;max-width:calc(100vw - 24px)}
-@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-@keyframes toastOut{to{opacity:0}}
-</style>
+  <!-- Firebase SDKs (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
-<body>
+<body class="landing-page">
 
-<!-- LOADING -->
-<div id="scr-loading">
-  <div class="spinner"></div>
-  <div class="load-txt">กำลังโหลด FUELRADAR...</div>
-</div>
+  <!-- Ambient backgrounds -->
+  <div class="bg-mesh"></div>
+  <div class="bg-grid"></div>
 
-<!-- SIGN-IN -->
-<div id="scr-signin" class="hidden">
-  <div class="si-logo">FUEL<span>RADAR</span></div>
-  <div class="si-sub">เช็คน้ำมันแบบเรียลไทม์ · ข้อมูลจากชุมชน</div>
-  <div class="si-radar"><div class="si-sweep"></div><div class="si-dot"></div></div>
-  <button class="google-btn" id="btn-signin">
-    <svg width="20" height="20" viewBox="0 0 48 48">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-    </svg>
-    เข้าสู่ระบบด้วย Google
-  </button>
-  <div class="si-note">ข้อมูลของคุณปลอดภัย · รายงานเพื่อช่วยคนไทยทุกคน</div>
-  <div class="si-warn hidden" id="oauth-hint">
-    ⚠ ยังไม่ได้ตั้งค่า Google Client ID<br>
-    ไปที่ <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a><br>
-    → APIs & Services → Credentials → Create OAuth 2.0 Client ID
-  </div>
-</div>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-brand">
+      <span class="brand-icon">◈</span>
+      <span class="brand-name">LtM Meeting</span>
+    </div>
+    <div class="nav-actions">
+      <span class="nav-badge">v1.0 · BETA</span>
+    </div>
+  </nav>
 
-<!-- MAIN APP -->
-<div id="scr-main" class="hidden">
+  <!-- Hero -->
+  <main class="hero">
+    <!-- Left: copy -->
+    <div class="hero-content">
+      <div class="hero-label">
+        <span class="dot-pulse"></span>
+        Free · No downloads · iPad native
+      </div>
 
-  <!-- Header -->
-  <div class="header">
-    <div class="logo-wrap">
-      <svg class="logo-ring" width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" stroke="#FFB800" stroke-width="1.5" opacity=".22"/>
-        <circle cx="12" cy="12" r="6"  stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
-        <circle cx="12" cy="12" r="2.2" fill="#FFB800"/>
-        <line x1="12" y1="2"  x2="12" y2="5"  stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
-        <line x1="12" y1="19" x2="12" y2="22" stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
-        <line x1="2"  y1="12" x2="5"  y2="12" stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
-        <line x1="19" y1="12" x2="22" y2="12" stroke="#FFB800" stroke-width="1.5" opacity=".4"/>
-      </svg>
-      <div>
-        <div class="logo-name">FUEL<span>RADAR</span></div>
-        <div class="logo-sub">ข้อมูลสดจากชุมชน</div>
+      <h1 class="hero-title">
+        Meet without<br>
+        <span class="gradient-text">limits.</span>
+      </h1>
+
+      <p class="hero-sub">
+        Crystal-clear video meetings built for teams that move fast.<br>
+        Instant setup. Passcode protected. Always free.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn-google" id="signInBtn">
+          <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+            <path fill="#4285F4" d="M47.5 24.6c0-1.6-.1-3.1-.4-4.6H24v8.7h13.2c-.6 3-2.3 5.5-4.9 7.2v6h7.9c4.6-4.2 7.3-10.5 7.3-17.3z"/>
+            <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.9-6c-2.1 1.4-4.8 2.3-8 2.3-6.1 0-11.3-4.1-13.2-9.7H2.7v6.2C6.7 42.9 14.8 48 24 48z"/>
+            <path fill="#FBBC05" d="M10.8 28.8c-.5-1.4-.7-2.9-.7-4.4s.2-3 .7-4.4v-6.2H2.7C1 17.2 0 20.5 0 24s1 6.8 2.7 9.2l8.1-4.4z"/>
+            <path fill="#EA4335" d="M24 9.5c3.4 0 6.5 1.2 8.9 3.5l6.7-6.7C35.9 2.5 30.4 0 24 0 14.8 0 6.7 5.1 2.7 12.5l8.1 4.4C12.7 13.6 17.9 9.5 24 9.5z"/>
+          </svg>
+          Continue with Google
+        </button>
+        <p class="hero-note">No credit card required · Free forever</p>
       </div>
     </div>
-    <div class="h-right">
-      <button class="hbtn" id="btn-alert"><span class="pulse-dot"></span><span id="alert-lbl">แจ้งเตือน</span></button>
-      <button class="hbtn" id="btn-trend">📊 ภาพรวม</button>
-      <div class="avatar" id="btn-avatar"><span id="av-init">?</span></div>
+
+    <!-- Right: preview widget -->
+    <div class="hero-visual">
+      <div class="meeting-preview">
+        <div class="preview-video active">
+          <div class="preview-avatar">JD</div>
+          <div class="preview-name">Jane Doe (Host) ✅</div>
+        </div>
+        <div class="preview-video">
+          <div class="preview-avatar" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">MK</div>
+          <div class="preview-name">Mike K.</div>
+        </div>
+        <div class="preview-video">
+          <div class="preview-avatar" style="background:linear-gradient(135deg,#059669,#0d9488)">AL</div>
+          <div class="preview-name">Aria L. ✋</div>
+        </div>
+        <div class="preview-video">
+          <div class="preview-avatar" style="background:linear-gradient(135deg,#dc2626,#b45309)">RS</div>
+          <div class="preview-name">Ryan S.</div>
+        </div>
+      </div>
+      <div class="preview-controls">
+        <div class="ctrl-pill">🎤</div>
+        <div class="ctrl-pill">📹</div>
+        <div class="ctrl-pill active">💬 3 new</div>
+        <div class="ctrl-pill">👥 4</div>
+        <div class="ctrl-pill leave">✕ Leave</div>
+      </div>
     </div>
-  </div>
+  </main>
 
-  <!-- Filters -->
-  <div class="filters">
-    <div class="fscroll">
-      <button class="chip" data-f="diesel">ดีเซล</button>
-      <button class="chip" data-f="e91">แก๊สโซฮอล์ 91</button>
-      <button class="chip" data-f="e95">แก๊สโซฮอล์ 95</button>
-      <button class="chip" data-f="e20">E20</button>
-      <button class="chip" data-f="e85">E85</button>
-      <button class="chip" data-f="lpg">LPG</button>
-      <button class="chip" data-f="available" style="border-color:rgba(0,255,136,.2);color:rgba(0,255,136,.6)">✓ มีน้ำมัน</button>
-      <button class="chip" data-f="out" style="border-color:rgba(255,59,92,.2);color:rgba(255,59,92,.6)">✕ หมด</button>
+  <!-- Features -->
+  <section class="features">
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Zero Setup</h3>
+      <p>Click a link, grant camera access, and you're in. No apps, no installs, no waiting.</p>
     </div>
-  </div>
-
-  <!-- Map -->
-  <div id="map-wrap">
-    <div id="leaflet-map"></div>
-    <div class="map-badge">
-      <div class="mb-row"><div class="mb-dot" style="background:var(--green)"></div><span id="cnt-a">0</span>&nbsp;มีน้ำมัน</div>
-      <div class="mb-row"><div class="mb-dot" style="background:var(--amber)"></div><span id="cnt-p">0</span>&nbsp;มีบางชนิด</div>
-      <div class="mb-row"><div class="mb-dot" style="background:var(--red)"></div><span id="cnt-o">0</span>&nbsp;น้ำมันหมด</div>
+    <div class="feature-card">
+      <div class="feature-icon">🔐</div>
+      <h3>Passcode Lock</h3>
+      <p>Add a passcode to any meeting. Only people with the right code get in — no exceptions.</p>
     </div>
-    <button class="locate-btn" id="btn-locate">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-      </svg>
-    </button>
-  </div>
-
-  <!-- Bottom sheet -->
-  <div class="bsheet">
-    <div class="sbar">
-      <div class="shandle"></div>
-      <div class="stitle">ปั๊มใกล้คุณ · <span id="s-count">0</span> แห่ง</div>
-      <div class="live-badge">สด</div>
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <h3>iPad First</h3>
+      <p>Every button, every gesture optimized for iPad Safari. Touch-friendly by design.</p>
     </div>
-    <div class="slist" id="slist"></div>
-  </div>
+  </section>
 
-</div><!-- /scr-main -->
+  <!-- Toast notifications -->
+  <div class="toast" id="toast"></div>
 
-<!-- FAB always on top -->
-<button class="fab hidden" id="btn-fab">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-</button>
-
-<script>
-// #region agent log script start
-fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H2',location:'index.html:script-start',message:'Page script boot',data:{hasLeaflet:!!window.L,hasFirebase:!!window.firebase,hasLeafletMap:!!document.getElementById('leaflet-map'),hasMapEl:!!document.getElementById('map'),hostname:location.hostname},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
-
-// #region agent log window error
-window.addEventListener('error',e=>{
-  try{
-    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H4',location:'index.html:window-error',message:'Uncaught error',data:{message:e?.message,filename:e?.filename,lineno:e?.lineno,colno:e?.colno},timestamp:Date.now()})}).catch(()=>{});
-  }catch{}
-});
-// #endregion
-
-// #region agent log unhandled rejection
-window.addEventListener('unhandledrejection',e=>{
-  try{
-    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H4',location:'index.html:unhandledrejection',message:'Unhandled promise rejection',data:{reason:(e?.reason&&e.reason.message)?e.reason.message:String(e?.reason)},timestamp:Date.now()})}).catch(()=>{});
-  }catch{}
-});
-// #endregion
-
-// ── CONFIG ───────────────────────────────
-const FB = {
-  apiKey:"AIzaSyAv__llreM9IMHGkSSd7sfLESK-C5f8dwk",
-  authDomain:"ltn-project-typing.firebaseapp.com",
-  projectId:"ltn-project-typing",
-  storageBucket:"ltn-project-typing.firebasestorage.app",
-  messagingSenderId:"577589727870",
-  appId:"1:577589727870:web:86695e39cfeec8150ebe2f"
-};
-const GOOGLE_CLIENT_ID = '847324239361-i8upcnl74ak6t8sh02vlgn3nsn9s7nnb.apps.googleusercontent.com';
-const CENTER=[13.7563,100.5018], ZOOM=14;
-
-// ── DATA ─────────────────────────────────
-const SEEDS=[
-  {id:'s1',name:'ปตท. พระราม 4',     brand:'PTT',     lat:13.7220,lng:100.5290,status:'available',fuels:{diesel:true, e91:true, e95:true, e20:false,e85:false,lpg:false},confirmCount:14,updatedMinAgo:3, zone:'สีลม'},
-  {id:'s2',name:'บางจาก อ่อนนุช',     brand:'BANGCHAK',lat:13.7020,lng:100.5990,status:'out',      fuels:{diesel:false,e91:false,e95:false,e20:false,e85:false,lpg:false},confirmCount:9, updatedMinAgo:8, zone:'อ่อนนุช'},
-  {id:'s3',name:'Shell สุขุมวิท 31',  brand:'SHELL',   lat:13.7340,lng:100.5680,status:'partial',  fuels:{diesel:true, e91:false,e95:false,e20:true, e85:false,lpg:false},confirmCount:6, updatedMinAgo:15,zone:'อโศก'},
-  {id:'s4',name:'PT ลาดพร้าว',        brand:'PT',      lat:13.7780,lng:100.5670,status:'available',fuels:{diesel:true, e91:true, e95:true, e20:true, e85:false,lpg:true },confirmCount:10,updatedMinAgo:2, zone:'ลาดพร้าว'},
-  {id:'s5',name:'Esso พระโขนง',       brand:'ESSO',    lat:13.7060,lng:100.6020,status:'out',      fuels:{diesel:false,e91:false,e95:false,e20:false,e85:false,lpg:false},confirmCount:18,updatedMinAgo:25,zone:'พระโขนง'},
-  {id:'s6',name:'Caltex ทองหล่อ',     brand:'CALTEX',  lat:13.7250,lng:100.5820,status:'partial',  fuels:{diesel:true, e91:false,e95:false,e20:false,e85:false,lpg:false},confirmCount:3, updatedMinAgo:42,zone:'ทองหล่อ'},
-  {id:'s7',name:'ปตท. อโศก',          brand:'PTT',     lat:13.7380,lng:100.5610,status:'available',fuels:{diesel:true, e91:true, e95:true, e20:true, e85:true, lpg:false},confirmCount:17,updatedMinAgo:5, zone:'อโศก'},
-  {id:'s8',name:'Susco บางนา',        brand:'SUSCO',   lat:13.6930,lng:100.6150,status:'available',fuels:{diesel:true, e91:true, e95:false,e20:false,e85:false,lpg:false},confirmCount:5, updatedMinAgo:31,zone:'บางนา'},
-];
-const ZONES=[
-  {name:'พระโขนง',avail:12,total:8,level:'critical',trend:'ดีเซลวิกฤต — ยืนยันจาก 2 ปั๊มแล้ว',bar:'r'},
-  {name:'อ่อนนุช', avail:35,total:5,level:'warning', trend:'E91/E95 กำลังจะหมด — คิวยาวมาก',   bar:'a'},
-  {name:'อโศก',   avail:58,total:6,level:'warning', trend:'มีบางชนิด — เช็คก่อนเติม',           bar:'a'},
-  {name:'สีลม',   avail:80,total:9,level:'ok',      trend:'น้ำมันปกติ — ความต้องการปกติ',         bar:'g'},
-  {name:'ลาดพร้าว',avail:72,total:7,level:'ok',      trend:'มีครบทุกชนิด',                       bar:'g'},
-  {name:'บางนา',  avail:65,total:4,level:'ok',      trend:'E95 มีน้อย — ดีเซลมี',               bar:'g'},
-];
-const FTH={diesel:'ดีเซล',e91:'แก๊สฯ 91',e95:'แก๊สฯ 95',e20:'E20',e85:'E85',lpg:'LPG'};
-const STH={available:'มีน้ำมัน',partial:'มีบางชนิด',out:'น้ำมันหมด'};
-
-// ── STATE ────────────────────────────────
-const S={
-  user:null,stations:[],confirms:{},myReports:0,filter:null,selId:null,map:null,markers:{},alertsOn:false,
-  rep:{station:'',action:'',fuels:[]},unsub:null,
-  osmFetchInFlight:false,osmFetchCount:0
-};
-
-// ── FIREBASE ─────────────────────────────
-let __fbInitOk=false;
-try{
-  firebase.initializeApp(FB);
-  __fbInitOk=true;
-}catch(e){
-  // #region agent log firebase init error
-  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H3',location:'index.html:firebase-init',message:'firebase.initializeApp failed',data:{error:(e&&e.message)?e.message:String(e)},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-  throw e;
-}
-const db=firebase.firestore(), auth=firebase.auth();
-const gProv=new firebase.auth.GoogleAuthProvider();
-gProv.addScope('profile'); gProv.addScope('email');
-
-auth.onAuthStateChanged(u=>u?onSignedIn(u):showSignin());
-
-async function seedIfEmpty(){
-  try{
-    const s=await db.collection('stations').limit(1).get();
-    if(s.empty){
-      const b=db.batch();
-      SEEDS.forEach(x=>b.set(db.collection('stations').doc(x.id),{...x,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}));
-      await b.commit();
-      // #region agent log seedIfEmpty seeded
-      fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H6',location:'index.html:seedIfEmpty',message:'Seeded stations because collection was empty',data:{seedCount:SEEDS.length},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-    }else{
-      // #region agent log seedIfEmpty already has data
-      fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H6',location:'index.html:seedIfEmpty',message:'Stations already present; no seeding',data:{hasAny:true},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-    }
-  }catch(e){console.warn('seed:',e)}
-}
-
-function listenStations(){
-  if(S.unsub)S.unsub();
-  S.unsub=db.collection('stations').onSnapshot(
-    snap=>{
-      S.stations=snap.docs.map(d=>({id:d.id,...d.data()}));
-      // #region agent log listenStations snapshot
-      fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H6',location:'index.html:listenStations',message:'stations snapshot received',data:{snapSize:snap.size,stationsAfterMap:S.stations.length,firstId:S.stations[0]?.id||null},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-      updateUI();
-    },
-    err=>{
-      // #region agent log listenStations error
-      fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H6',location:'index.html:listenStations',message:'stations snapshot error -> fallback to SEEDS',data:{error:(err&&err.message)?err.message:String(err)},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-      S.stations=[...SEEDS];updateUI();
-    }
-  );
-}
-
-async function loadMyData(){
-  if(!S.user)return;
-  try{
-    const[c,r]=await Promise.all([
-      db.collection('confirmations').where('uid','==',S.user.uid).get(),
-      db.collection('reports').where('uid','==',S.user.uid).get(),
-    ]);
-    c.docs.forEach(d=>S.confirms[d.data().stationId]=true);
-    S.myReports=r.size;
-  }catch(e){}
-}
-
-async function doReport(sid,action,fuels){
-  const fm={};
-  Object.keys(FTH).forEach(f=>fm[f]=action==='available'&&fuels.includes(f));
-  try{
-    await db.collection('stations').doc(sid).update({status:action==='available'?'available':'out',fuels:fm,reportCount:firebase.firestore.FieldValue.increment(1),confirmCount:0,updatedMinAgo:0,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-    await db.collection('reports').add({stationId:sid,action,fuels,uid:S.user?.uid,name:S.user?.displayName,ts:firebase.firestore.FieldValue.serverTimestamp()});
-    S.myReports++;
-  }catch(e){
-    const s=S.stations.find(x=>x.id===sid);
-    if(s){s.status=action==='available'?'available':'out';s.fuels=fm;s.updatedMinAgo=0;}
-    updateUI();
-  }
-  toast('⚡ ส่งรายงานแล้ว — ขอบคุณ!');
-}
-
-async function doConfirm(sid){
-  if(S.confirms[sid])return;
-  S.confirms[sid]=true;
-  try{
-    await db.collection('stations').doc(sid).update({confirmCount:firebase.firestore.FieldValue.increment(1)});
-    await db.collection('confirmations').add({stationId:sid,uid:S.user?.uid,ts:firebase.firestore.FieldValue.serverTimestamp()});
-  }catch(e){const s=S.stations.find(x=>x.id===sid);if(s)s.confirmCount=(s.confirmCount||0)+1;}
-  renderList(); toast('✓ ยืนยันแล้ว!');
-}
-
-// ── MAP ───────────────────────────────────
-function initMap(){
-  // Double rAF ensures the DOM has been painted and #leaflet-map has real pixel size
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    if(S.map) return;
-    const m = S.map = L.map('leaflet-map',{center:CENTER,zoom:ZOOM,zoomControl:false,attributionControl:false});
-    console.log('[FuelRadar] initMap created Leaflet map:', m, 'leaflet-map:', !!document.getElementById('leaflet-map'));
-    // #region agent log initMap first
-    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H1',location:'index.html:initMap:first',message:'Leaflet initialized in leaflet-map',data:{hasLeafletMap:!!document.getElementById('leaflet-map'),hasSMap:!!S.map},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    // Stadia Alidade Smooth Dark — more detail, road labels, brighter
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(m);
-    L.control.attribution({position:'bottomleft',prefix:false}).addAttribution('© <a href="https://openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com">CARTO</a>').addTo(m);
-    renderMarkers();
-    locateUser();
-    // Force resize in case layout wasn't settled
-    setTimeout(()=>m.invalidateSize(),300);
-  }));
-}
-
-function mkIcon(status){
-  const c={available:'#00FF88',partial:'#FFB800',out:'#FF3B5C'}[status]||'#FFB800';
-  const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='28' height='36' viewBox='0 0 28 36'><path d='M14 0C6.3 0 0 6.3 0 14c0 10 14 22 14 22S28 24 28 14C28 6.3 21.7 0 14 0z' fill='${c}' opacity='.92'/><circle cx='14' cy='14' r='5.5' fill='rgba(0,0,0,.4)'/><circle cx='14' cy='14' r='2.5' fill='white'/></svg>`;
-  return L.icon({iconUrl:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),iconSize:[28,36],iconAnchor:[14,36],popupAnchor:[0,-38]});
-}
-
-function renderMarkers(){
-  if(!S.map)return;
-  const vis=new Set(filtered().map(s=>s.id));
-  Object.keys(S.markers).forEach(id=>{if(!vis.has(id)){S.markers[id].remove();delete S.markers[id];}});
-  filtered().forEach(s=>{
-    if(!s.lat||!s.lng)return;
-    if(S.markers[s.id]){S.markers[s.id].setIcon(mkIcon(s.status));return;}
-    const c={available:'#00FF88',partial:'#FFB800',out:'#FF3B5C'}[s.status]||'#FFB800';
-    const fl=Object.entries(s.fuels||{}).filter(([,v])=>v).map(([k])=>FTH[k]).join(', ')||'ไม่มีเลย';
-    const m=L.marker([s.lat,s.lng],{icon:mkIcon(s.status)}).addTo(S.map);
-    m.bindPopup(`<div style="padding:11px 13px;font-family:'Sarabun',sans-serif;min-width:150px"><div style="color:#E2D9BF;font-size:14px;font-weight:700;line-height:1.25">${s.name}</div><div style="color:#50483A;font-size:10px;margin-top:1px">${s.brand} · ${s.zone||''}</div><div style="margin-top:8px;display:flex;align-items:center;gap:5px"><div style="width:7px;height:7px;border-radius:50%;background:${c};box-shadow:0 0 5px ${c}"></div><span style="color:${c};font-size:12px;font-weight:700">${STH[s.status]||''}</span></div><div style="margin-top:5px;color:#50483A;font-size:11px">น้ำมัน: <span style="color:#E2D9BF">${fl}</span></div><div style="color:#50483A;font-size:11px">ยืนยัน: <span style="color:#E2D9BF">${s.confirmCount||0} คน</span></div></div>`);
-    m.on('click',()=>{S.selId=s.id;renderList();});
-    S.markers[s.id]=m;
-  });
-}
-
-function locateUser(){
-  if(!navigator.geolocation)return;
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const ll=[pos.coords.latitude,pos.coords.longitude];
-    S.userLL=ll;
-    if(S.map){
-      S.map.flyTo(ll,ZOOM,{animate:true,duration:.8});
-      if(S.userMarker) S.userMarker.remove();
-      S.userMarker=L.marker(ll,{icon:L.divIcon({
-        className:'',
-        html:`<div style="width:14px;height:14px;border-radius:50%;background:#38BDF8;border:2px solid #fff;box-shadow:0 0 10px rgba(56,189,248,.7)"></div>`,
-        iconSize:[14,14],iconAnchor:[7,7]
-      }),zIndexOffset:1000}).addTo(S.map)
-        .bindPopup('<div style="background:#111820;color:#38BDF8;padding:7px 11px;border-radius:6px;font-family:Sarabun;font-size:13px">📍 ตำแหน่งของคุณ</div>');
-      fetchOSMStations(pos.coords.latitude, pos.coords.longitude);
-    }
-  },()=>{ toast('⚠ ไม่สามารถหาตำแหน่งได้'); });
-}
-
-// ── OVERPASS API — ดึงปั๊มจริงจาก OpenStreetMap ─────
-async function fetchOSMStations(lat,lng){
-  const radius=1500; // smaller query => lower chance of Overpass 504
-  const osmTimeoutSec=10;
-  S.osmFetchCount=(S.osmFetchCount||0)+1;
-  if(S.osmFetchInFlight){
-    // #region agent log overpass skipped (in flight)
-    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H2',location:'index.html:overpass-skip',message:'Overpass fetch skipped (already in flight)',data:{count:S.osmFetchCount,lat,lng,radius,osmTimeoutSec},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    return;
-  }
-  S.osmFetchInFlight=true;
-  toast('🔍 กำลังโหลดปั๊มใกล้คุณ...');
-  const query=`[out:json][timeout:${osmTimeoutSec}];(node["amenity"="fuel"](around:${radius},${lat},${lng});way["amenity"="fuel"](around:${radius},${lat},${lng}););out center tags;`;
-  const controller=(typeof AbortSignal!=='undefined'&&AbortSignal.timeout)?new AbortController({signal:AbortSignal.timeout(12000)}):new AbortController();
-  const started=Date.now();
-  // #region agent log overpass attempt
-  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H1',location:'index.html:overpass',message:'Overpass fetch starting',data:{count:S.osmFetchCount,lat,lng,radius,osmTimeoutSec,queryLen:query.length},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-  try{
-    const res=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(query),signal:controller.signal});
-    const elapsedMs=Date.now()-started;
-    // #region agent log overpass response
-    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H1',location:'index.html:overpass',message:'Overpass fetch response',data:{count:S.osmFetchCount,status:res.status,ok:res.ok,elapsedMs},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    if(!res.ok){
-      let snippet='';
-      try{snippet=await res.text();}catch{}
-      throw new Error(`Overpass HTTP ${res.status} (${res.statusText||'no statusText'}) after ${elapsedMs}ms: ${snippet.slice(0,120)}`);
-    }
-    const data=await res.json();
-    renderOSMMarkers(data.elements,lat,lng);
-    toast('⛽ พบ '+data.elements.length+' ปั๊มใกล้คุณ');
-  }catch(e){
-    console.warn('Overpass:',e);
-    // #region agent log overpass failure
-    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H5',location:'index.html:overpass',message:'Overpass fetch failed',data:{error:(e&&e.message)?e.message:String(e)},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    toast('⚠ โหลดปั๊มไม่ได้');
-  }finally{
-    S.osmFetchInFlight=false;
-  }
-}
-
-function calcDist(lat1,lng1,lat2,lng2){
-  const R=6371,dL=(lat2-lat1)*Math.PI/180,dN=(lng2-lng1)*Math.PI/180;
-  const a=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dN/2)*Math.sin(dN/2);
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-function renderOSMMarkers(elements,userLat,userLng){
-  if(S.osmMarkers){S.osmMarkers.forEach(m=>m.remove());}
-  S.osmMarkers=[];
-  elements.forEach(el=>{
-    const lat=el.lat||(el.center&&el.center.lat);
-    const lng=el.lon||(el.center&&el.center.lon);
-    if(!lat||!lng)return;
-    const tags=el.tags||{};
-    const name=tags['name:th']||tags.name||tags['name:en']||'ปั๊มน้ำมัน';
-    const brand=tags.brand||tags.operator||'';
-    const fuels=[];
-    if(tags['fuel:diesel']==='yes') fuels.push('ดีเซล');
-    if(tags['fuel:octane_91']==='yes'||tags['fuel:gasohol_91']==='yes') fuels.push('91');
-    if(tags['fuel:octane_95']==='yes'||tags['fuel:gasohol_95']==='yes') fuels.push('95');
-    if(tags['fuel:e20']==='yes') fuels.push('E20');
-    if(tags['fuel:e85']==='yes') fuels.push('E85');
-    if(tags['fuel:lpg']==='yes') fuels.push('LPG');
-    const dist=Math.round(calcDist(userLat,userLng,lat,lng)*10)/10;
-    const matched=S.stations.find(s=>s.lat&&calcDist(s.lat,s.lng,lat,lng)<0.08);
-    const sc=matched?({available:'#00FF88',partial:'#FFB800',out:'#FF3B5C'}[matched.status]||'#aaa'):'rgba(200,200,200,0.3)';
-    const icon=L.divIcon({
-      className:'',
-      html:`<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 26 34"><path d="M13 0C5.8 0 0 5.8 0 13c0 9.1 13 21 13 21S26 22.1 26 13C26 5.8 20.2 0 13 0z" fill="${sc}" opacity="0.92"/><text x="13" y="18" text-anchor="middle" font-size="12" fill="${matched?'#000':'#ddd'}">⛽</text></svg>`,
-      iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-36]
+  <!-- Firebase + config -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // ── Auto redirect if already signed in ─────────────────
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) window.location.href = 'dash.html';
     });
-    const m=L.marker([lat,lng],{icon,opacity:matched?1:0.65}).addTo(S.map);
-    m.bindPopup(`<div style="padding:10px 12px;font-family:'Sarabun',sans-serif;min-width:150px"><div style="color:#E2D9BF;font-size:14px;font-weight:700;line-height:1.25">${name}</div><div style="color:#50483A;font-size:10px;margin-top:1px">${brand}</div><div style="margin-top:5px;color:#50483A;font-size:11px">📍 <span style="color:#38BDF8">${dist} กม.</span></div>${fuels.length?`<div style="margin-top:3px;color:#50483A;font-size:11px">น้ำมัน: <span style="color:#E2D9BF">${fuels.join(', ')}</span></div>`:''}<div style="margin-top:5px;font-size:11px">${matched?`สถานะ: <span style="color:${sc};font-weight:700">${STH[matched.status]}</span>`:'<span style="color:#50483A">ยังไม่มีรายงาน — กดปุ่ม + เพื่อรายงาน</span>'}</div></div>`);
-    S.osmMarkers.push(m);
-  });
-}
 
-// ── RENDER ───────────────────────────────
-function filtered(){
-  if(!S.filter)return S.stations;
-  if(S.filter==='available')return S.stations.filter(s=>s.status==='available');
-  if(S.filter==='out')return S.stations.filter(s=>s.status==='out');
-  return S.stations.filter(s=>s.fuels&&s.fuels[S.filter]);
-}
-function updateUI(){renderList();renderMarkers();updateBadge();}
-function updateBadge(){
-  const a=S.stations.filter(s=>s.status==='available').length;
-  const p=S.stations.filter(s=>s.status==='partial').length;
-  const o=S.stations.filter(s=>s.status==='out').length;
-  const ca=g('cnt-a'),cp=g('cnt-p'),co=g('cnt-o');
-  if(ca)ca.textContent=a;if(cp)cp.textContent=p;if(co)co.textContent=o;
-}
-function renderList(){
-  const el=g('slist');if(!el)return;
-  const list=filtered();
-  // #region agent log renderList
-  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H7',location:'index.html:renderList',message:'renderList invoked',data:{listLength:list.length,filter:S.filter||null,hasSlist:!!el,hasScount:!!g('s-count')},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-  const sc=g('s-count');if(sc)sc.textContent=list.length;
-  el.innerHTML='';
-  if(!list.length){el.innerHTML=`<div style="text-align:center;padding:20px;font-size:13px;color:var(--muted)">ไม่พบปั๊มที่ตรงกับตัวกรอง</div>`;return;}
-  list.forEach((s,i)=>{
-    const trust=s.confirmCount||0,tl=trust>=10?'hi':trust>=5?'md':'lo',done=!!S.confirms[s.id],sel=S.selId===s.id;
-    const d=document.createElement('div');
-    d.className=`s-card${sel?' sel':''}`;d.style.animationDelay=`${i*.03}s`;
-    d.innerHTML=`<div class="sbar2 ${s.status}"></div><div class="sinfo"><div class="sname">${s.name}</div><div class="srow"><span class="stag ${s.status}">${STH[s.status]||''}</span><span class="stime">⏱ ${s.updatedMinAgo??'?'} นาทีที่แล้ว</span></div><div class="sfuels">${Object.keys(FTH).map(f=>`<span class="fpill ${s.fuels&&s.fuels[f]?'ok':'no'}">${f.toUpperCase()}</span>`).join('')}</div></div><div class="sright"><div class="trust"><div class="trust-n ${tl}">${trust}</div><div class="trust-l">ยืนยัน</div></div><button class="cbtn${done?' done':''}" data-cid="${s.id}">${done?'✓ ยืนยัน':'↑ ยืนยัน'}</button></div>`;
-    d.addEventListener('click',e=>{
-      if(e.target.closest('[data-cid]'))return;
-      S.selId=s.id;
-      if(S.map){S.map.flyTo([s.lat,s.lng],16,{animate:true,duration:.6});S.markers[s.id]?.openPopup();}
-      renderList();
-    });
-    el.appendChild(d);
-  });
-  el.querySelectorAll('[data-cid]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();if(!b.classList.contains('done'))doConfirm(b.dataset.cid);}));
-}
+    // ── Sign in ────────────────────────────────────────────
+    const signInBtn = document.getElementById('signInBtn');
+    const originalBtnHTML = signInBtn.innerHTML;
 
-// ── REPORT MODAL ─────────────────────────
-function openReport(){S.rep={station:S.selId||'',action:'',fuels:[]};renderReport();}
-function renderReport(){
-  const old=document.getElementById('rmodal');if(old)old.remove();
-  const fuels=Object.keys(FTH),ok=S.rep.station&&S.rep.action&&S.rep.fuels.length>0;
-  const bd=document.createElement('div');bd.id='rmodal';bd.className='backdrop';
-  bd.innerHTML=`<div class="modal"><div class="mhandle"></div><div class="mtitle">🛢 รายงานสถานะน้ำมัน</div><div class="msub">1 แตะ · ไม่ต้องกรอกฟอร์ม · อัปเดตทันที</div><div class="mlbl">เลือกปั๊ม</div><select class="selinp" id="r-sel"><option value="">— เลือกปั๊มใกล้คุณ —</option>${S.stations.map(s=>`<option value="${s.id}"${S.rep.station===s.id?' selected':''}>${s.name} · ${s.brand}</option>`).join('')}</select><div class="mlbl">สถานะน้ำมัน</div><div class="agrid"><button class="acard avail${S.rep.action==='available'?' on':''}" data-act="available"><span class="aico">⛽</span><span class="albl">มีน้ำมัน</span><span class="asub">น้ำมันยังมีอยู่</span></button><button class="acard nostock${S.rep.action==='out'?' on':''}" data-act="out"><span class="aico">🚫</span><span class="albl">น้ำมันหมด</span><span class="asub">ไม่มีน้ำมันแล้ว</span></button></div><div class="mlbl">ชนิดน้ำมัน</div><div class="fgrid">${fuels.map(f=>`<button class="fbtn${S.rep.fuels.includes(f)?' on':''}" data-f="${f}">${FTH[f]}</button>`).join('')}</div><button class="subbtn" id="r-ok" ${ok?'':'disabled'}>${ok?'📡 ส่งรายงาน':'เลือกปั๊ม + สถานะ + น้ำมัน'}</button></div>`;
-  bd.addEventListener('click',e=>{if(e.target===bd)bd.remove();});
-  document.body.appendChild(bd);
-  g('r-sel').addEventListener('change',e=>{S.rep.station=e.target.value;renderReport();});
-  bd.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',()=>{S.rep.action=b.dataset.act;renderReport();}));
-  bd.querySelectorAll('[data-f]').forEach(b=>b.addEventListener('click',()=>{const f=b.dataset.f;S.rep.fuels.includes(f)?S.rep.fuels=S.rep.fuels.filter(x=>x!==f):S.rep.fuels.push(f);renderReport();}));
-  g('r-ok')?.addEventListener('click',async()=>{if(!ok)return;bd.remove();await doReport(S.rep.station,S.rep.action,S.rep.fuels);});
-}
+    signInBtn.addEventListener('click', async () => {
+      signInBtn.disabled = true;
+      signInBtn.innerHTML = '<span class="spinner"></span>&nbsp; Connecting...';
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await firebase.auth().signInWithPopup(provider);
+        window.location.href = 'dash.html';
+      } catch (e) {
+        console.error('Sign in error:', e);
+        signInBtn.disabled = false;
+        signInBtn.innerHTML = originalBtnHTML;
 
-// ── TREND ────────────────────────────────
-function openTrend(){
-  const old=document.getElementById('tpanel');if(old){old.remove();return;}
-  const p=document.createElement('div');p.id='tpanel';p.className='tpanel';
-  p.innerHTML=`<div class="tphdr"><div><div class="tptitle">📊 ภาพรวมน้ำมันแต่ละโซน</div><div class="tpsub">อัปเดตอัตโนมัติจากชุมชน</div></div><button class="closebtn" id="tp-c">✕ ปิด</button></div><div class="tpbody">${ZONES.map(z=>`<div class="zcard"><div class="ztop"><div class="zname" style="color:${z.bar==='r'?'var(--red)':z.bar==='a'?'var(--amber)':'var(--green)'}">${z.name}</div><div class="zbadge ${z.level}">${z.level==='critical'?'วิกฤต':z.level==='warning'?'เฝ้าระวัง':'ปกติ'}</div></div><div class="ztrack"><div class="zfill ${z.bar}" style="width:${z.avail}%"></div></div><div class="zmeta"><div>ความพร้อม <em>${z.avail}%</em></div><div>ปั๊ม <em>${z.total} แห่ง</em></div></div><div class="znote">↳ ${z.trend}</div></div>`).join('')}<div class="zcard" style="border-color:rgba(56,189,248,.15)"><div style="font-size:15px;font-weight:800;color:var(--blue);margin-bottom:9px">สถานะระบบ</div><div style="font-size:12px;color:var(--muted);line-height:2.1">ผู้รายงานวันนี้ <em style="color:var(--text);font-style:normal">${47+S.myReports} คน</em><br>รายงานของฉัน <em style="color:var(--amber);font-style:normal">${S.myReports} ครั้ง</em><br>ปั๊มที่ติดตาม <em style="color:var(--text);font-style:normal">${S.stations.length} แห่ง</em><br>ความแม่นยำ <em style="color:var(--green);font-style:normal">89.3%</em></div></div></div>`;
-  document.body.appendChild(p);
-  g('tp-c').addEventListener('click',()=>p.remove());
-}
+        const msg = e.code === 'auth/popup-blocked'
+          ? 'Pop-up blocked. Allow pop-ups for this site.'
+          : e.code === 'auth/cancelled-popup-request'
+          ? 'Sign-in cancelled.'
+          : 'Sign in failed. Please try again.';
 
-// ── USER MENU ────────────────────────────
-function toggleUserMenu(){
-  const old=document.getElementById('umenu');if(old){old.remove();return;}
-  const m=document.createElement('div');m.id='umenu';m.className='umenu';
-  m.innerHTML=`<div class="umname">${S.user?.displayName||'ผู้ใช้'}</div><div class="umemail">${S.user?.email||''}</div><div class="umstat">รายงานทั้งหมด <em>${S.myReports} ครั้ง</em><br>ยืนยันทั้งหมด <em>${Object.keys(S.confirms).length} ปั๊ม</em></div><button class="umso" id="btn-so">ออกจากระบบ</button>`;
-  setTimeout(()=>document.addEventListener('click',e=>{if(!m.contains(e.target)&&e.target.id!=='btn-avatar')m.remove();},{once:true}),10);
-  document.body.appendChild(m);
-  g('btn-so').addEventListener('click',()=>{auth.signOut();m.remove();});
-}
-
-// ── TOAST ────────────────────────────────
-let map;
-let toastT;
-function toast(msg){const old=document.querySelector('.toast');if(old)old.remove();clearTimeout(toastT);const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);toastT=setTimeout(()=>t.remove(),2800);}
-
-// ── SCREENS ──────────────────────────────
-function showSignin(){
-  g('scr-loading').classList.add('hidden');
-  g('scr-signin').classList.remove('hidden');
-  if(GOOGLE_CLIENT_ID.startsWith('YOUR_'))g('oauth-hint').classList.remove('hidden');
-  // #region agent log showSignin
-  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H3',location:'index.html:showSignin',message:'Sign-in screen shown',data:{oauthHintVisible:!!g('oauth-hint') && !g('oauth-hint').classList.contains('hidden'),fbInitOk:__fbInitOk},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-}
-  
-async function onSignedIn(u){
-  S.user=u;
-  const ab=g('btn-avatar');
-  if(ab){if(u.photoURL)ab.innerHTML=`<img src="${u.photoURL}" alt="av"/>`;else{const s=g('av-init');if(s)s.textContent=(u.displayName||'U')[0].toUpperCase();}}
-  await loadMyData();
-  await seedIfEmpty();
-  listenStations();
-  g('scr-loading').classList.add('hidden');
-  g('scr-signin').classList.add('hidden');
-  g('scr-main').classList.remove('hidden');
-  g('btn-fab').classList.remove('hidden');
-  // #region agent log onSignedIn pre-map
-  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H1',location:'index.html:onSignedIn',message:'User signed in, starting initMap',data:{hasLeaflet:!!window.L,hasLeafletMap:!!document.getElementById('leaflet-map'),hasMapEl:!!document.getElementById('map')},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-  initMap();
-  bindEvents();
-}
-
-function initMap_simple() {
-  // #region agent log initMap second + element presence
-  fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H1',location:'index.html:initMap:second',message:'initMap() called (second definition)',data:{hasMapEl:!!document.getElementById('map'),hasLeafletMap:!!document.getElementById('leaflet-map')},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-  try{
-    map = L.map('map').setView([13.7563, 100.5018], 10);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-  }catch(e){
-    // #region agent log initMap second error
-    fetch('http://127.0.0.1:7399/ingest/13130a24-37b6-4f01-aa7c-18ea707cce08',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'80140d'},body:JSON.stringify({sessionId:'80140d',runId:'initial',hypothesisId:'H4',location:'index.html:initMap:second',message:'initMap() failed',data:{error:(e&&e.message)?e.message:String(e)},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    throw e;
-  }
-}
-
-// ── EVENTS ───────────────────────────────
-function bindEvents(){
-  document.querySelectorAll('.chip').forEach(c=>{
-    c.addEventListener('click',()=>{
-      const f=c.dataset.f;
-      S.filter=S.filter===f?null:f;
-      document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
-      if(S.filter)c.classList.add('on');
-      updateUI();
-    });
-  });
-  g('btn-fab')?.addEventListener('click',openReport);
-  g('btn-locate')?.addEventListener('click',()=>{locateUser();toast('📍 กำลังหาตำแหน่ง...');});
-  g('btn-alert')?.addEventListener('click',()=>{
-    S.alertsOn=!S.alertsOn;
-    g('btn-alert').classList.toggle('active',S.alertsOn);
-    g('alert-lbl').textContent=S.alertsOn?'แจ้งเตือนเปิด':'แจ้งเตือน';
-    toast(S.alertsOn?'🔔 เปิดแจ้งเตือนแล้ว':'🔕 ปิดแจ้งเตือนแล้ว');
-  });
-  g('btn-trend')?.addEventListener('click',openTrend);
-  g('btn-avatar')?.addEventListener('click',e=>{e.stopPropagation();toggleUserMenu();});
-}
-
-
-function g(id){return document.getElementById(id);}
-
-// ── SIGN-IN BUTTON ────────────────────────
-// ใช้ .onclick แทน addEventListener เพื่อให้ browser รู้ว่าเป็น direct user gesture
-// ป้องกัน popup ถูกบล็อก
-// ── Safari/iOS safe: ใช้ redirect เสมอ ──────────────
-// popup ถูกบล็อกบน Safari/iOS แม้จะเป็น direct click
-// redirect คือวิธีที่ปลอดภัยที่สุดทุก browser/platform
-g('btn-signin').onclick = function() {
-  auth.signInWithRedirect(gProv);
-};
-
-// รับผลลัพธ์หลัง redirect กลับมา — ทำงานทุก browser
-auth.getRedirectResult()
-  .then(function(result){
-    if(result && result.user){
-      onSignedIn(result.user);
-    }
-  })
-  .catch(function(e){
-    console.error('Redirect result error:', e.code, e.message);
-    if(e.code === 'auth/operation-not-allowed'){
-      // แสดง error ใน signin screen เพราะ toast อาจยังไม่ mount
-      const hint = g('oauth-hint');
-      if(hint){
-        hint.classList.remove('hidden');
-        hint.innerHTML = '⚠ เปิด Google Sign-in ใน Firebase Console ก่อน<br>Authentication → Sign-in method → Google → Enable';
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast error show';
+        setTimeout(() => t.classList.remove('show'), 4000);
       }
-    } else if(e.code === 'auth/unauthorized-domain'){
-      const hint = g('oauth-hint');
-      if(hint){
-        hint.classList.remove('hidden');
-        hint.innerHTML = '⚠ เพิ่ม domain <b>' + location.hostname + '</b><br>ใน Authorized JavaScript origins<br>ใน Google Cloud Console';
-      }
-    } else if(e.code && e.code !== 'auth/null-user'){
-      console.warn('Non-critical redirect error:', e.code);
-    }
-  });
-</script>
+    });
+  </script>
 </body>
 </html>

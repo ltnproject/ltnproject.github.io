@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Meeting — LtM</title>
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="call-page">
+
+  <!-- ── Passcode Gate (shown if meeting is locked) ─────── -->
+  <div class="passcode-gate hidden" id="passcode-gate">
+    <div class="bg-mesh"></div>
+    <div class="bg-grid"></div>
+    <div class="passcode-box">
+      <div class="passcode-icon">🔒</div>
+      <div class="passcode-title">Locked Meeting</div>
+      <div class="passcode-sub">
+        Room <strong id="passcode-room-id"></strong> requires a passcode to join.
+      </div>
+      <input
+        class="input-field input-mono"
+        id="passcode-entry"
+        type="text"
+        placeholder="Enter passcode"
+        maxlength="12"
+        autocomplete="off"
+        autofocus
+        style="text-align:center;font-size:22px;margin-bottom:0"
+      >
+      <div class="passcode-error" id="passcode-error"></div>
+      <button class="btn btn-primary" id="passcode-submit" style="width:100%;justify-content:center;margin-top:16px">
+        Enter Meeting →
+      </button>
+      <button onclick="window.location.href='dash.html'" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:10px">
+        ← Go back
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Connecting overlay ──────────────────────────────── -->
+  <div class="connecting-overlay" id="connecting-overlay">
+    <div class="bg-mesh"></div>
+    <div class="connecting-spinner"></div>
+    <div class="connecting-text">Connecting...</div>
+    <div style="font-size:13px;color:var(--text-muted);font-family:var(--font-mono);margin-top:4px" id="connecting-room">
+      Room: <span id="connecting-room-id"></span>
+    </div>
+  </div>
+
+  <!-- ── Call Room (hidden until connected) ──────────────── -->
+  <div id="call-root" class="hidden" style="display:flex;flex-direction:column;height:100vh">
+
+    <!-- Header -->
+    <header class="call-header">
+      <div class="call-header-left">
+        <div class="nav-brand" style="cursor:pointer" onclick="window.location.href='dash.html'">
+          <span class="brand-icon" style="font-size:16px">◈</span>
+          <span class="brand-name" style="font-size:15px">LtM</span>
+        </div>
+        <div class="call-room-id" id="call-room-id-display">ID: —</div>
+        <button class="call-copy-btn" id="call-copy-btn">🔗 Copy link</button>
+      </div>
+      <div class="call-header-right">
+        <div class="net-quality">
+          <div class="net-bars">
+            <div class="net-bar active"></div>
+            <div class="net-bar active"></div>
+            <div class="net-bar active"></div>
+          </div>
+        </div>
+        <div class="call-clock" id="call-clock">00:00</div>
+      </div>
+    </header>
+
+    <!-- Main area: video + sidebar -->
+    <div class="call-main">
+
+      <!-- Video grid -->
+      <div class="video-grid" id="video-grid" data-count="1">
+        <!-- Tiles are injected by webrtc.js -->
+      </div>
+
+      <!-- Sidebar (chat + participants) -->
+      <div class="call-sidebar" id="call-sidebar">
+        <div class="sidebar-tabs">
+          <button class="sidebar-tab active" data-tab="chat" id="chat-tab">💬 Chat</button>
+          <button class="sidebar-tab" data-tab="people" id="people-tab">👥 People</button>
+        </div>
+
+        <div class="sidebar-content">
+          <!-- Chat pane -->
+          <div class="sidebar-pane active" data-pane="chat">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-wrap">
+              <textarea
+                class="chat-input"
+                id="chat-input"
+                placeholder="Send a message..."
+                rows="1"
+              ></textarea>
+              <button class="chat-send-btn" id="chat-send" title="Send">↑</button>
+            </div>
+          </div>
+
+          <!-- Participants pane -->
+          <div class="sidebar-pane" data-pane="people">
+            <div class="participants-list" id="participants-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls bar -->
+    <div class="call-controls">
+
+      <!-- Emoji reactions picker (above controls) -->
+      <div class="reactions-picker" id="reactions-picker">
+        <div class="reaction-btn" data-emoji="👍" title="Thumbs up">👍</div>
+        <div class="reaction-btn" data-emoji="❤️" title="Heart">❤️</div>
+        <div class="reaction-btn" data-emoji="😂" title="Laughing">😂</div>
+        <div class="reaction-btn" data-emoji="🔥" title="Fire">🔥</div>
+        <div class="reaction-btn" data-emoji="🎉" title="Party">🎉</div>
+        <div class="reaction-btn" data-emoji="👏" title="Clap">👏</div>
+        <div class="reaction-btn" data-emoji="😮" title="Wow">😮</div>
+      </div>
+
+      <!-- Mic -->
+      <button class="ctrl-btn" id="btn-mic" title="Toggle microphone">
+        <span id="btn-mic-icon">🎤</span>
+        <span class="ctrl-label" id="btn-mic-label">Mute</span>
+      </button>
+
+      <!-- Camera -->
+      <button class="ctrl-btn" id="btn-cam" title="Toggle camera">
+        <span id="btn-cam-icon">📹</span>
+        <span class="ctrl-label" id="btn-cam-label">Stop Video</span>
+      </button>
+
+      <!-- Screen Share -->
+      <button class="ctrl-btn" id="btn-screen" title="Share screen">
+        <span>🖥</span>
+        <span class="ctrl-label" id="btn-screen-label">Share</span>
+      </button>
+
+      <!-- Raise Hand -->
+      <button class="ctrl-btn" id="btn-hand" title="Raise or lower hand">
+        <span>✋</span>
+        <span class="ctrl-label" id="btn-hand-label">Raise Hand</span>
+      </button>
+
+      <!-- Reactions -->
+      <button class="ctrl-btn" id="btn-react" title="Send a reaction" style="position:relative">
+        <span>😊</span>
+        <span class="ctrl-label">React</span>
+      </button>
+
+      <!-- Chat -->
+      <button class="ctrl-btn" id="btn-chat" title="Open chat">
+        <span>💬</span>
+        <span class="ctrl-label">Chat</span>
+      </button>
+
+      <!-- Participants -->
+      <button class="ctrl-btn" id="btn-people" title="Show participants">
+        <span>👥</span>
+        <span class="ctrl-label">People</span>
+      </button>
+
+      <!-- Leave -->
+      <button class="ctrl-btn leave-btn" id="btn-leave" title="Leave meeting">
+        <span>✕</span>
+        <span class="ctrl-label">Leave</span>
+      </button>
+    </div>
+
+  </div><!-- /#call-root -->
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase config + scripts -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Show room ID in connecting overlay
+    const params = new URLSearchParams(window.location.search);
+    const roomId = params.get('room');
+    const el = document.getElementById('connecting-room-id');
+    if (el && roomId) el.textContent = roomId;
+
+    // Auto-expand chat textarea
+    document.getElementById('chat-input')?.addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+  </script>
+  <script src="js/webrtc.js"></script>
+</body>
+</html>

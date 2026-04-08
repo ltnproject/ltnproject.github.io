@@ -206,9 +206,10 @@
       renderParticipantList(snap.docs);
 
       // Connect to new peers we don't have a connection with
+      // Use UID-based deterministic initiation to avoid "glare" (both sides calling both)
       for (const pDoc of remotePeers) {
         const uid = pDoc.id;
-        if (!peers[uid]) {
+        if (!peers[uid] && ME.uid > uid) {
           await connectToPeer(uid, pDoc.data());
         }
       }
@@ -386,17 +387,32 @@
       } catch (e) { console.warn('ICE write error:', e); }
     };
 
-    // Track handler — add remote video
-    pc.ontrack = ({ streams: [stream] }) => {
+    // Track handler — add remote audio/video
+    pc.ontrack = (event) => {
+      const [stream] = event.streams;
       if (!stream) return;
+
       let tile = document.querySelector(`.video-tile[data-uid="${uid}"]`);
       if (!tile) {
         tile = createTile(uid, peerData.displayName || uid.slice(0, 6), peerData.photoURL || null, false);
       }
+      
       const video = tile.querySelector('video');
       if (video) {
-        video.srcObject = stream;
-        video.play().catch(() => {});
+        if (video.srcObject !== stream) {
+          video.srcObject = stream;
+        }
+        
+        // Ensure remote video elements are prepared for playback
+        video.muted = false;
+        video.volume = 1.0;
+        
+        // Attempt to play
+        video.play().catch(err => {
+          console.warn('Auto-play blocked or failed:', err);
+          // If blocked, we might want to show a 'Click to play' overlay on the tile
+          // but usually the "Enter Meeting" gesture covers it.
+        });
       }
       updateGridLayout();
     };
@@ -413,8 +429,8 @@
         // Auto reconnect
         setTimeout(() => {
           if (peers[uid]) { peers[uid].close(); delete peers[uid]; }
-          const pDoc = roomRef.collection('participants').doc(uid).get().then(d => {
-            if (d.exists) connectToPeer(uid, d.data());
+          roomRef.collection('participants').doc(uid).get().then(d => {
+            if (d.exists && ME.uid > uid) connectToPeer(uid, d.data());
           });
         }, 3000);
       }

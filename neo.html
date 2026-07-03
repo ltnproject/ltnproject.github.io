@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ยินดีต้อนรับสู่ครอบครัว MacBook Neo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --indigo-950:#0B0A26;
+    --indigo-900:#100E38;
+    --indigo-800:#1B1852;
+    --indigo-700:#292266;
+    --indigo-600:#453B93;
+    --lavender:#A79EFF;
+    --lavender-soft:#C9C2FF;
+    --white:#FFFFFF;
+    --fog:#F3F1FB;
+    --fog-dim:#DAD6F2;
+    --gold:#E8C468;
+    --gold-dim:#B99A4C;
+    --ink:#0B0A26;
+    --radius-lg:28px;
+    --radius-md:18px;
+    --radius-sm:12px;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    font-family:'IBM Plex Sans Thai','Kanit',sans-serif;
+    background:var(--indigo-950);
+    color:var(--fog);
+    overflow-x:hidden;
+    line-height:1.7;
+  }
+
+  h1,h2,h3,.display{
+    font-family:'Kanit','IBM Plex Sans Thai',sans-serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+
+  ::selection{background:var(--gold);color:var(--indigo-950);}
+
+  a{color:inherit;text-decoration:none;}
+
+  .container{
+    max-width:1120px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* ---------- Ambient background ---------- */
+  .ambient{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(167,158,255,0.16), transparent 45%),
+      radial-gradient(circle at 82% 70%, rgba(232,196,104,0.08), transparent 40%),
+      var(--indigo-950);
+  }
+
+  /* ---------- Nav ---------- */
+  .topbar{
+    position:fixed;
+    top:0;left:0;right:0;
+    z-index:50;
+    padding:18px 0;
+    background:rgba(11,10,38,0.55);
+    backdrop-filter:blur(18px) saturate(140%);
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .topbar .container{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .brand{
+    font-family:'Kanit',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.14em;
+    color:var(--fog);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .brand .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block;}
+  .nav-links{display:flex;gap:32px;font-size:14px;color:var(--lavender-soft);}
+  .nav-links a{transition:color .25s var(--ease);}
+  .nav-links a:hover{color:var(--white);}
+  @media (max-width:720px){.nav-links{display:none;}}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    z-index:1;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:140px 24px 100px;
+  }
+
+  .eyebrow{
+    font-size:13px;
+    letter-spacing:0.22em;
+    color:var(--gold);
+    margin-bottom:22px;
+    font-weight:500;
+  }
+
+  .hero h1{
+    font-size:clamp(34px,6vw,64px);
+    line-height:1.18;
+    max-width:820px;
+    color:var(--white);
+  }
+  .hero h1 em{
+    font-style:normal;
+    background:linear-gradient(120deg,var(--lavender),var(--gold) 90%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+
+  .hero p.lede{
+    margin-top:22px;
+    font-size:17px;
+    color:var(--fog-dim);
+    max-width:560px;
+  }
+
+  /* Gift box - signature element */
+  .gift-stage{
+    margin-top:64px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:20px;
+  }
+
+  .gift-box{
+    position:relative;
+    width:180px;
+    height:150px;
+    cursor:pointer;
+    transform-style:preserve-3d;
+    transition:transform .6s var(--ease);
+  }
+  .gift-box:hover{transform:translateY(-6px) scale(1.02);}
+  .gift-box.opened{pointer-events:none;}
+
+  .box-base{
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:110px;
+    background:linear-gradient(155deg,var(--indigo-600),var(--indigo-800));
+    border-radius:10px;
+    box-shadow:0 30px 60px -20px rgba(69,59,147,0.6), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .box-lid{
+    position:absolute;
+    top:32px;left:-8px;right:-8px;
+    height:36px;
+    background:linear-gradient(155deg,var(--indigo-700),var(--indigo-800));
+    border-radius:8px;
+    box-shadow:0 12px 24px -10px rgba(0,0,0,0.5);
+    transform-origin:center bottom;
+    transition:transform .7s var(--ease), opacity .5s ease .2s;
+    z-index:3;
+  }
+  .ribbon-v{
+    position:absolute;
+    top:32px;bottom:0;left:50%;
+    width:16px;
+    margin-left:-8px;
+    background:linear-gradient(180deg,var(--gold),var(--gold-dim));
+    z-index:2;
+    transition:opacity .4s ease, transform .5s var(--ease);
+  }
+  .ribbon-h{
+    position:absolute;
+    top:44px;left:0;right:0;
+    height:16px;
+    background:linear-gradient(90deg,var(--gold),var(--gold-dim));
+    z-index:4;
+    transition:opacity .4s ease;
+  }
+  .bow{
+    position:absolute;
+    top:6px;left:50%;
+    transform:translateX(-50%);
+    width:70px;height:40px;
+    z-index:5;
+    transition:transform .6s var(--ease), opacity .5s ease;
+  }
+  .bow svg{width:100%;height:100%;filter:drop-shadow(0 6px 10px rgba(0,0,0,0.35));}
+
+  .gift-box.opened .box-lid{
+    transform:translateY(-90px) rotateX(50deg);
+    opacity:0;
+  }
+  .gift-box.opened .bow{
+    transform:translate(-50%,-120px) rotate(-25deg) scale(0.6);
+    opacity:0;
+  }
+  .gift-box.opened .ribbon-v,
+  .gift-box.opened .ribbon-h{opacity:0;}
+  .gift-box.opened .box-base{
+    box-shadow:0 40px 70px -20px rgba(167,158,255,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .glow-burst{
+    position:absolute;
+    inset:-40px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(232,196,104,0.5), transparent 70%);
+    opacity:0;
+    transition:opacity .5s ease;
+    pointer-events:none;
+    z-index:0;
+  }
+  .gift-box.opened .glow-burst{opacity:1;}
+
+  .gift-hint{
+    font-size:13px;
+    color:var(--lavender-soft);
+    letter-spacing:0.04em;
+  }
+  .gift-hint.hidden{opacity:0;height:0;overflow:hidden;}
+
+  /* Spec chips */
+  .spec-strip{
+    margin-top:56px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    justify-content:center;
+    max-width:680px;
+    opacity:0;
+    transform:translateY(18px);
+    transition:opacity .8s var(--ease), transform .8s var(--ease);
+  }
+  .spec-strip.reveal{opacity:1;transform:translateY(0);}
+  .chip{
+    padding:10px 20px;
+    border-radius:999px;
+    border:1px solid rgba(167,158,255,0.3);
+    background:rgba(255,255,255,0.04);
+    font-size:14px;
+    color:var(--fog);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .chip .k{color:var(--gold);font-weight:600;}
+
+  /* Confetti canvas */
+  #confetti-canvas{
+    position:fixed;
+    inset:0;
+    z-index:40;
+    pointer-events:none;
+  }
+
+  /* ---------- Section shared ---------- */
+  section{position:relative;z-index:1;padding:120px 0;}
+  .section-head{
+    text-align:center;
+    max-width:640px;
+    margin:0 auto 64px;
+  }
+  .section-head .eyebrow{margin-bottom:14px;}
+  .section-head h2{
+    font-size:clamp(26px,4vw,38px);
+    color:var(--white);
+  }
+  .section-head p{
+    margin-top:14px;
+    color:var(--fog-dim);
+    font-size:15.5px;
+  }
+
+  /* ---------- Feature cards ---------- */
+  .feature-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:22px;
+  }
+  @media (max-width:860px){.feature-grid{grid-template-columns:1fr;}}
+
+  .feature-card{
+    background:linear-gradient(165deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:var(--radius-lg);
+    padding:34px 28px;
+    transition:transform .4s var(--ease), border-color .4s ease;
+  }
+  .feature-card:hover{
+    transform:translateY(-6px);
+    border-color:rgba(167,158,255,0.4);
+  }
+  .feature-icon{
+    width:48px;height:48px;
+    border-radius:14px;
+    background:rgba(167,158,255,0.12);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:22px;
+  }
+  .feature-icon svg{width:24px;height:24px;stroke:var(--lavender);}
+  .feature-card h3{
+    font-size:19px;color:var(--white);margin-bottom:10px;font-weight:600;
+  }
+  .feature-card p{color:var(--fog-dim);font-size:14.5px;}
+  .feature-card .callout{
+    margin-top:16px;
+    font-size:13px;
+    color:var(--gold);
+    font-weight:500;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  /* ---------- Comparison ---------- */
+  .compare-wrap{
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:var(--radius-lg);
+    overflow:hidden;
+  }
+  .compare-row{
+    display:grid;
+    grid-template-columns:1.2fr 1fr 1fr;
+    align-items:center;
+  }
+  .compare-row + .compare-row{border-top:1px solid rgba(255,255,255,0.06);}
+  .compare-row.head{
+    background:rgba(255,255,255,0.03);
+    font-size:12.5px;
+    letter-spacing:0.08em;
+    color:var(--fog-dim);
+    padding:16px 28px;
+  }
+  .compare-row.head .col-mac{color:var(--gold);}
+  .compare-cell{padding:22px 28px;font-size:14.5px;}
+  .compare-cell.label{color:var(--fog);font-weight:500;}
+  .compare-cell.mac{
+    color:var(--white);
+    display:flex;align-items:center;gap:8px;
+  }
+  .compare-cell.win{
+    color:var(--fog-dim);
+    display:flex;align-items:center;gap:8px;
+  }
+  .tick{
+    width:18px;height:18px;flex:none;
+    border-radius:50%;
+    background:rgba(232,196,104,0.18);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .tick svg{width:11px;height:11px;stroke:var(--gold);}
+  .cross{
+    width:18px;height:18px;flex:none;
+    border-radius:50%;
+    background:rgba(255,255,255,0.06);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .cross svg{width:10px;height:10px;stroke:var(--fog-dim);}
+
+  @media (max-width:720px){
+    .compare-row{grid-template-columns:1fr;}
+    .compare-row.head .col-mac,.compare-row.head .col-win{padding-top:4px;}
+    .compare-cell{padding:10px 24px;}
+    .compare-cell.label{padding-top:22px;font-weight:600;color:var(--white);}
+  }
+
+  /* ---------- Transition guide (tabs) ---------- */
+  .tabs-wrap{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:32px;
+  }
+  @media (max-width:780px){.tabs-wrap{grid-template-columns:1fr;}}
+
+  .tab-list{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  @media (max-width:780px){
+    .tab-list{flex-direction:row;overflow-x:auto;gap:8px;padding-bottom:6px;}
+  }
+  .tab-btn{
+    text-align:right;
+    padding:14px 18px;
+    border-radius:var(--radius-sm);
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--fog-dim);
+    font-family:inherit;
+    font-size:14.5px;
+    cursor:pointer;
+    transition:all .3s var(--ease);
+    white-space:nowrap;
+  }
+  @media (max-width:780px){.tab-btn{text-align:center;}}
+  .tab-btn:hover{color:var(--white);}
+  .tab-btn.active{
+    background:rgba(167,158,255,0.12);
+    border-color:rgba(167,158,255,0.35);
+    color:var(--white);
+    font-weight:500;
+  }
+
+  .tab-panel{
+    display:none;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:var(--radius-lg);
+    padding:36px;
+    animation:fadeIn .5s var(--ease);
+  }
+  .tab-panel.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  .equiv-row{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    font-size:18px;
+    color:var(--white);
+    margin-bottom:18px;
+    font-weight:500;
+  }
+  .equiv-row .old{color:var(--fog-dim);font-weight:400;}
+  .equiv-row .arrow{color:var(--gold);}
+  .tab-panel p.desc{color:var(--fog-dim);font-size:14.5px;margin-top:10px;}
+
+  .shortcut-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-top:8px;
+  }
+  @media (max-width:520px){.shortcut-grid{grid-template-columns:1fr;}}
+  .shortcut-item{
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.07);
+    border-radius:var(--radius-sm);
+    padding:16px 18px;
+  }
+  .shortcut-item .old{color:var(--fog-dim);font-size:13px;margin-bottom:6px;}
+  .shortcut-item .new{color:var(--white);font-size:16px;font-weight:500;}
+  .kbd{
+    display:inline-block;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:6px;
+    padding:2px 8px;
+    font-size:13px;
+    margin:0 2px;
+  }
+
+  .traffic-demo{
+    display:flex;
+    gap:8px;
+    margin-bottom:18px;
+  }
+  .traffic-demo span{width:12px;height:12px;border-radius:50%;display:inline-block;}
+  .traffic-demo .r{background:#FF6159;}
+  .traffic-demo .y{background:#FFC02E;}
+  .traffic-demo .g{background:#28C840;}
+
+  /* ---------- Footer ---------- */
+  footer{
+    position:relative;z-index:1;
+    padding:100px 24px 60px;
+    text-align:center;
+    background:linear-gradient(180deg,transparent,rgba(167,158,255,0.06));
+  }
+  .letter{
+    max-width:600px;
+    margin:0 auto;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:var(--radius-lg);
+    padding:48px 40px;
+  }
+  .letter .eyebrow{margin-bottom:18px;}
+  .letter p{
+    color:var(--fog-dim);
+    font-size:15.5px;
+    margin-bottom:16px;
+    text-align:right;
+  }
+  .letter .signoff{
+    margin-top:28px;
+    color:var(--white);
+    font-family:'Kanit',sans-serif;
+    font-size:17px;
+  }
+  footer .copyright{
+    margin-top:40px;
+    font-size:12.5px;
+    color:var(--fog-dim);
+    opacity:0.6;
+  }
+
+  /* Reveal on scroll */
+  .reveal-up{
+    opacity:0;
+    transform:translateY(24px);
+    transition:opacity .8s var(--ease), transform .8s var(--ease);
+  }
+  .reveal-up.in{opacity:1;transform:translateY(0);}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition-duration:.01ms !important; animation-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="ambient"></div>
+<canvas id="confetti-canvas"></canvas>
+
+<div class="topbar">
+  <div class="container">
+    <div class="brand"><span class="dot"></span>MACBOOK NEO</div>
+    <nav class="nav-links">
+      <a href="#features">คุณสมบัติ</a>
+      <a href="#compare">เทียบให้เห็นชัด</a>
+      <a href="#guide">คู่มือเริ่มต้น</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="eyebrow">ของขวัญพิเศษจากใจ</div>
+  <h1>ยินดีต้อนรับคุณพ่อสู่โลกของ<br><em>MacBook Neo</em></h1>
+  <p class="lede">เครื่องใหม่เอี่ยม สีอินดิโกสวยหรู เตรียมไว้ให้คุณพ่อใช้งานได้ลื่นไหล เบาสบาย และดูดีในทุกวัน</p>
+
+  <div class="gift-stage">
+    <div class="gift-box" id="giftBox" role="button" aria-label="แตะเพื่อเปิดของขวัญ" tabindex="0">
+      <div class="glow-burst"></div>
+      <div class="box-base"></div>
+      <div class="ribbon-v"></div>
+      <div class="ribbon-h"></div>
+      <div class="box-lid"></div>
+      <div class="bow">
+        <svg viewBox="0 0 70 40" fill="none">
+          <path d="M35 22C25 5 5 5 8 18C10 27 25 24 35 22Z" fill="#E8C468"/>
+          <path d="M35 22C45 5 65 5 62 18C60 27 45 24 35 22Z" fill="#E8C468"/>
+          <circle cx="35" cy="21" r="6" fill="#B99A4C"/>
+        </svg>
+      </div>
+    </div>
+    <div class="gift-hint" id="giftHint">แตะที่กล่อง เพื่อเปิดของขวัญ 🎁</div>
+
+    <div class="spec-strip" id="specStrip">
+      <div class="chip"><span class="k">13"</span> หน้าจอ Retina คมชัด</div>
+      <div class="chip"><span class="k">8GB</span> Unified Memory</div>
+      <div class="chip"><span class="k">256GB</span> SSD พื้นที่เก็บข้อมูล</div>
+      <div class="chip"><span class="k">Indigo</span> สีสุดหรู เฉพาะรุ่นนี้</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section id="features">
+  <div class="container">
+    <div class="section-head reveal-up">
+      <div class="eyebrow">ทำไมเครื่องนี้ถึงพิเศษ</div>
+      <h2>ประสบการณ์ระดับพรีเมียม ที่สัมผัสได้ทันที</h2>
+      <p>ไม่ต้องเข้าใจสเปกลึกซึ้ง แค่ลองใช้ คุณพ่อก็จะรู้สึกถึงความต่างตั้งแต่วันแรก</p>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card reveal-up">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <h3>เสียงดี ระดับสตูดิโอ</h3>
+        <p>ลำโพงคุณภาพสูง ให้เสียงเบสหนักแน่นและมิติเสียงกว้าง ฟังเพลงหรือดูหนังได้อรรถรสเต็มที่ ไม่มีลำโพงโน้ตบุ๊กวินโดวส์ราคาต่ำกว่า 40,000 บาทเครื่องไหนทำได้ใกล้เคียงขนาดนี้</p>
+        <div class="callout">✦ เสียงที่คุณพ่อจะสัมผัสได้ทันที</div>
+      </div>
+
+      <div class="feature-card reveal-up">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </div>
+        <h3>กล้องและไมค์ คมชัดทุกสาย</h3>
+        <p>ภาพวิดีโอคอลคมชัดสดใส พร้อมชุดไมโครโฟนคุณภาพสตูดิโอที่รับเสียงพูดได้ชัดเจน เหมาะสำหรับคุยกับลูกหลานหรือเพื่อนฝูงผ่านวิดีโอคอล โดยไม่ต้องพึ่งกล้องแยก</p>
+        <div class="callout">✦ เห็นหน้า ได้ยินเสียง ชัดทุกครั้ง</div>
+      </div>
+
+      <div class="feature-card reveal-up">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="13" x2="23" y2="11"/></svg>
+        </div>
+        <h3>จอสวย แบตอึด ใหม่เอี่ยม</h3>
+        <p>หน้าจอสีสันสวยงาม สบายตา ใช้งานได้ทั้งวันโดยไม่ต้องพะวงเรื่องแบตเตอรี่ และเครื่องนี้เป็นแบตใหม่ 100% ยังไม่เคยผ่านการชาร์จมาก่อนแม้แต่ครั้งเดียว</p>
+        <div class="callout">✦ สภาพเหมือนแกะกล่องจากร้าน</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMPARE ================= -->
+<section id="compare">
+  <div class="container">
+    <div class="section-head reveal-up">
+      <div class="eyebrow">เทียบให้เห็นชัด</div>
+      <h2>MacBook Neo เทียบกับโน้ตบุ๊กวินโดวส์ทั่วไป</h2>
+      <p>เทียบกับโน้ตบุ๊กวินโดวส์ในช่วงราคา 20,000–35,000 บาท ที่หาซื้อได้ทั่วไป</p>
+    </div>
+
+    <div class="compare-wrap reveal-up">
+      <div class="compare-row head">
+        <div class="compare-cell label">หัวข้อเปรียบเทียบ</div>
+        <div class="compare-cell col-mac">MacBook Neo</div>
+        <div class="compare-cell col-win">โน้ตบุ๊กวินโดวส์ทั่วไป</div>
+      </div>
+
+      <div class="compare-row">
+        <div class="compare-cell label">วัสดุตัวเครื่อง</div>
+        <div class="compare-cell mac"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>อะลูมิเนียมแท้ แข็งแรง หรูหรา</div>
+        <div class="compare-cell win"><span class="cross"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>พลาสติกหรือโลหะบาง งอง่าย</div>
+      </div>
+
+      <div class="compare-row">
+        <div class="compare-cell label">แผ่นทัชแพด</div>
+        <div class="compare-cell mac"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>Force Touch แม่นยำ ลื่นมือ</div>
+        <div class="compare-cell win"><span class="cross"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>คลิกยาก กดพลาดบ่อย</div>
+      </div>
+
+      <div class="compare-row">
+        <div class="compare-cell label">ความลื่นไหลในการใช้งาน</div>
+        <div class="compare-cell mac"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>ลื่นสม่ำเสมอ ใช้ได้นานหลายปี</div>
+        <div class="compare-cell win"><span class="cross"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>เริ่มอืดเมื่อใช้ไปสักพัก</div>
+      </div>
+
+      <div class="compare-row">
+        <div class="compare-cell label">เสียงพัดลมและความร้อน</div>
+        <div class="compare-cell mac"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>เงียบสนิท ไม่ค่อยร้อน</div>
+        <div class="compare-cell win"><span class="cross"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>พัดลมดัง เครื่องร้อนง่าย</div>
+      </div>
+
+      <div class="compare-row">
+        <div class="compare-cell label">มูลค่าในระยะยาว</div>
+        <div class="compare-cell mac"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>เก็บมูลค่าได้ดี ขายต่อง่าย</div>
+        <div class="compare-cell win"><span class="cross"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>ราคาตกเร็ว</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRANSITION GUIDE ================= -->
+<section id="guide">
+  <div class="container">
+    <div class="section-head reveal-up">
+      <div class="eyebrow">คู่มือเริ่มต้นใช้งานฉบับสมบูรณ์</div>
+      <h2>จากวินโดวส์ สู่ macOS ง่ายกว่าที่คิด</h2>
+      <p>รวมทุกเรื่องที่คุณพ่อควรรู้ในสัปดาห์แรก ตั้งแต่การจัดการไฟล์ไปจนถึงเจสเจอร์บนแทร็คแพด แตะเลือกหัวข้อทางซ้าย แล้วค่อย ๆ ทำความคุ้นเคยได้เลยครับ ไม่ต้องรีบ</p>
+    </div>
+
+    <div class="tabs-wrap reveal-up">
+      <div class="tab-list" id="tabList">
+        <button class="tab-btn active" data-tab="finder">จัดการไฟล์</button>
+        <button class="tab-btn" data-tab="settings">ตั้งค่าเครื่อง</button>
+        <button class="tab-btn" data-tab="dock">แถบเมนูและ Dock</button>
+        <button class="tab-btn" data-tab="shortcut">คีย์ลัดที่ใช้บ่อย</button>
+        <button class="tab-btn" data-tab="window">ปุ่มปิด-ย่อ-ขยาย</button>
+        <button class="tab-btn" data-tab="trackpad">เจสเจอร์แทร็คแพด</button>
+        <button class="tab-btn" data-tab="search">ค้นหาด้วย Spotlight</button>
+        <button class="tab-btn" data-tab="rightclick">คลิกขวา</button>
+        <button class="tab-btn" data-tab="apps">ติดตั้งแอปใหม่</button>
+        <button class="tab-btn" data-tab="screenshot">แคปหน้าจอ</button>
+      </div>
+
+      <div class="tab-panels">
+        <div class="tab-panel active" data-panel="finder">
+          <div class="equiv-row"><span class="old">File Explorer</span><span class="arrow">→</span><span>Finder</span></div>
+          <p class="desc">Finder คือหน้าต่างจัดการไฟล์ของ Mac เหมือนกับ File Explorer ที่คุณพ่อคุ้นเคยบนวินโดวส์เลยครับ ใช้ดูรูป เอกสาร และโฟลเดอร์ต่าง ๆ ได้ตามปกติ ไอคอนหน้ายิ้มสีฟ้าที่แถบด้านล่างสุดของจอ คือทางลัดเข้า Finder ได้ทันที</p>
+        </div>
+        <div class="tab-panel" data-panel="settings">
+          <div class="equiv-row"><span class="old">Control Panel</span><span class="arrow">→</span><span>การตั้งค่าระบบ (System Settings)</span></div>
+          <p class="desc">ทุกอย่างที่เคยปรับใน Control Panel เช่น เสียง จอภาพ วันเวลา หรือการเชื่อมต่อ Wi-Fi จะย้ายมาอยู่ในเมนู "การตั้งค่าระบบ" แทน เปิดได้จากไอคอนรูปเฟืองในแถบ Dock ด้านล่าง ใช้งานง่าย จัดหมวดหมู่ชัดเจนกว่าเดิมด้วยครับ</p>
+        </div>
+        <div class="tab-panel" data-panel="dock">
+          <div class="equiv-row"><span class="old">Taskbar</span><span class="arrow">→</span><span>Dock + แถบเมนูด้านบน</span></div>
+          <p class="desc">แถบไอคอนโปรแกรมด้านล่างจอเรียกว่า "Dock" ใช้เปิดแอปที่ใช้บ่อยได้เลย ส่วนแถบด้านบนสุดของจอคือ "แถบเมนู" จะแสดงเวลา สัญญาณ Wi-Fi และเมนูคำสั่งของแอปที่เปิดอยู่ ต่างจากวินโดวส์ที่รวมทุกอย่างไว้แถบเดียวด้านล่างครับ</p>
+        </div>
+        <div class="tab-panel" data-panel="shortcut">
+          <div class="equiv-row" style="margin-bottom:22px;"><span>คีย์ลัดที่ใช้บ่อยที่สุด</span></div>
+          <div class="shortcut-grid">
+            <div class="shortcut-item">
+              <div class="old">เดิม: <span class="kbd">Ctrl</span> + <span class="kbd">C</span></div>
+              <div class="new">ใหม่: <span class="kbd">⌘</span> + <span class="kbd">C</span> (คัดลอก)</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="old">เดิม: <span class="kbd">Ctrl</span> + <span class="kbd">V</span></div>
+              <div class="new">ใหม่: <span class="kbd">⌘</span> + <span class="kbd">V</span> (วาง)</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="old">เดิม: <span class="kbd">Ctrl</span> + <span class="kbd">Z</span></div>
+              <div class="new">ใหม่: <span class="kbd">⌘</span> + <span class="kbd">Z</span> (ย้อนกลับ)</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="old">สลับภาษาไทย/อังกฤษ</div>
+              <div class="new">กดปุ่ม <span class="kbd">Caps Lock</span> หรือ <span class="kbd">🌐</span></div>
+            </div>
+          </div>
+          <p class="desc" style="margin-top:20px;">แค่จำสองปุ่มหลักนี้ก็ใช้งานได้คล่องแล้วครับ ปุ่ม Command (⌘) จะอยู่ข้าง Spacebar ใกล้เคียงตำแหน่งปุ่ม Ctrl เดิมพอดี มือจะปรับตัวได้เร็วมาก</p>
+        </div>
+        <div class="tab-panel" data-panel="window">
+          <div class="equiv-row"><span>ปุ่มปิด ย่อ ขยายหน้าต่าง</span></div>
+          <div class="traffic-demo"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+          <p class="desc">บน Mac ปุ่มควบคุมหน้าต่างทั้งสามจะย้ายมาอยู่ "มุมบนซ้าย" แทนมุมขวาที่คุณพ่อคุ้นเคย โดยสีแดงคือปิดหน้าต่าง สีเหลืองคือย่อหน้าต่างเก็บไว้ใน Dock และสีเขียวคือขยายเต็มจอ ลองสังเกตสีแล้วจะจำได้ไม่ยากครับ</p>
+        </div>
+        <div class="tab-panel" data-panel="trackpad">
+          <div class="equiv-row"><span>เจสเจอร์แทร็คแพดที่ใช้บ่อย</span></div>
+          <p class="desc">แทร็คแพดของ Mac ใช้นิ้วสัมผัสแทนการคลิกเมาส์ได้เกือบทุกอย่าง ลองฝึกไม้เหล่านี้ดูครับ จะทำให้ใช้งานคล่องขึ้นเยอะ</p>
+          <div class="shortcut-grid">
+            <div class="shortcut-item">
+              <div class="old">เลื่อนหน้าจอขึ้น-ลง</div>
+              <div class="new">ลาก 2 นิ้วบนแทร็คแพด</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="old">ย่อ-ขยายรูปภาพ</div>
+              <div class="new">บีบ/แบม 2 นิ้วเข้า-ออก</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="old">สลับหน้าต่างแอปที่เปิดอยู่</div>
+              <div class="new">ปัด 3 นิ้วซ้าย-ขวา</div>
+            </div>
+            <div class="shortcut-item">
+              <div class="old">ดูหน้าต่างทั้งหมดพร้อมกัน</div>
+              <div class="new">ปัด 3 นิ้วขึ้น (Mission Control)</div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-panel" data-panel="search">
+          <div class="equiv-row"><span class="old">ช่องค้นหาบน Taskbar</span><span class="arrow">→</span><span>Spotlight</span></div>
+          <p class="desc">อยากหาไฟล์ เปิดแอป หรือคำนวณเลขง่าย ๆ ไม่ต้องไล่หาเอง กด <span class="kbd">⌘</span> + <span class="kbd">Space</span> ที่ไหนก็ได้ แล้วพิมพ์สิ่งที่ต้องการ Spotlight จะค้นหาให้ทันที ทั้งไฟล์ แอป และแม้แต่คำในอีเมล เร็วกว่าการไล่คลิกหาเยอะครับ</p>
+        </div>
+        <div class="tab-panel" data-panel="rightclick">
+          <div class="equiv-row"><span>คลิกขวาบน Mac</span></div>
+          <p class="desc">แทร็คแพดของ Mac ไม่มีปุ่มขวาแยกเหมือนเมาส์ทั่วไป แต่คลิกขวาได้เหมือนเดิมด้วยการ "แตะ 2 นิ้วพร้อมกัน" บนแทร็คแพด จะขึ้นเมนูตัวเลือกให้เหมือนคลิกขวาบนวินโดวส์ทุกอย่าง ใช้ไม่กี่ครั้งก็คุ้นมือครับ</p>
+        </div>
+        <div class="tab-panel" data-panel="apps">
+          <div class="equiv-row"><span>ติดตั้งโปรแกรมใหม่</span></div>
+          <p class="desc">แทนที่จะดาวน์โหลดไฟล์ .exe เหมือนวินโดวส์ บน Mac ส่วนใหญ่จะติดตั้งผ่าน "App Store" ซึ่งเป็นแอปสีฟ้าใน Dock เปิดขึ้นมา ค้นหาแอปที่ต้องการ แล้วกด "รับ" หรือ "ติดตั้ง" ได้เลย ปลอดภัยและไม่ต้องกังวลเรื่องไวรัสครับ</p>
+        </div>
+        <div class="tab-panel" data-panel="screenshot">
+          <div class="equiv-row"><span class="old">Print Screen</span><span class="arrow">→</span><span>⌘ + Shift + ตัวเลข</span></div>
+          <p class="desc">ถ่ายภาพหน้าจอทั้งหมด กด <span class="kbd">⌘</span> + <span class="kbd">Shift</span> + <span class="kbd">3</span> ส่วนถ้าอยากเลือกถ่ายเฉพาะบางส่วนของจอ ให้กด <span class="kbd">⌘</span> + <span class="kbd">Shift</span> + <span class="kbd">4</span> แล้วลากเลือกพื้นที่ที่ต้องการ ภาพจะถูกบันทึกไว้ที่หน้าจอเดสก์ท็อปโดยอัตโนมัติ</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="copyright">ทำขึ้นด้วยใจ เพื่อคุณพ่อคนพิเศษ</div>
+</footer>
+
+<script>
+(function(){
+  // ---------- Confetti ----------
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const colors = ['#A79EFF', '#E8C468', '#FFFFFF', '#453B93', '#C9C2FF'];
+  let particles = [];
+  let animId = null;
+
+  function spawnConfetti(originX, originY, count){
+    for(let i=0;i<count;i++){
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3 + Math.random() * 7;
+      particles.push({
+        x: originX,
+        y: originY,
+        vx: Math.cos(angle) * speed * (0.6 + Math.random()*0.8),
+        vy: Math.sin(angle) * speed - 4 - Math.random()*4,
+        size: 5 + Math.random()*6,
+        color: colors[Math.floor(Math.random()*colors.length)],
+        rotation: Math.random() * 360,
+        rotSpeed: (Math.random()-0.5) * 14,
+        shape: Math.random() > 0.5 ? 'rect' : 'circle',
+        gravity: 0.18 + Math.random()*0.08,
+        drag: 0.985,
+        life: 1
+      });
+    }
+    if(!animId) animate();
+  }
+
+  function animate(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      p.vx *= p.drag;
+      p.vy = p.vy * p.drag + p.gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rotation += p.rotSpeed;
+      if(p.y > H + 30) p.life = 0;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation * Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.min(1, (H - p.y) / H + 0.3);
+      if(p.shape === 'rect'){
+        ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0,0,p.size/2,0,Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+
+    particles = particles.filter(p => p.life > 0 && p.y < H + 40);
+
+    if(particles.length > 0){
+      animId = requestAnimationFrame(animate);
+    } else {
+      animId = null;
+      ctx.clearRect(0,0,W,H);
+    }
+  }
+
+  // ---------- Gift box open ----------
+  const giftBox = document.getElementById('giftBox');
+  const giftHint = document.getElementById('giftHint');
+  const specStrip = document.getElementById('specStrip');
+  let opened = false;
+
+  function openGift(){
+    if(opened) return;
+    opened = true;
+    giftBox.classList.add('opened');
+    giftHint.classList.add('hidden');
+    specStrip.classList.add('reveal');
+
+    const rect = giftBox.getBoundingClientRect();
+    const originX = rect.left + rect.width/2;
+    const originY = rect.top + rect.height/2;
+
+    spawnConfetti(originX, originY, 90);
+    setTimeout(()=> spawnConfetti(originX - 40, originY, 40), 150);
+    setTimeout(()=> spawnConfetti(originX + 40, originY, 40), 250);
+  }
+
+  giftBox.addEventListener('click', openGift);
+  giftBox.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openGift(); }
+  });
+
+  // ---------- Tabs ----------
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabPanels = document.querySelectorAll('.tab-panel');
+  tabBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tabBtns.forEach(b=>b.classList.remove('active'));
+      tabPanels.forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelector('.tab-panel[data-panel="'+btn.dataset.tab+'"]').classList.add('active');
+    });
+  });
+
+  // ---------- Scroll reveal ----------
+  const revealEls = document.querySelectorAll('.reveal-up');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el=> io.observe(el));
+
+})();
+</script>
+
+</body>
+</html>
